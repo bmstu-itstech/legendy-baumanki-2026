@@ -1,4 +1,4 @@
-export const REGISTRATION_URL = "#";
+export const REGISTRATION_URL = "/registration";
 
 export const PHOTO_ALBUM_URL = "#";
 

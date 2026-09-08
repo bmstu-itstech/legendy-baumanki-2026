@@ -103,3 +103,66 @@ body {
     scroll-behavior: auto;
   }
 }
+
+/*
+  Мобильная (до md) вёрстка регистрации рассчитана на вьюпорт 824px
+  высотой (как в макете): контент ~693px + декор 159px внизу. На более
+  низких экранах контент пропорционально ужимается через zoom, чтобы
+  кнопка и строка «Уже есть аккаунт?» не наезжали на декор. Правила
+  идут от высоких экранов к низким: срабатывает последнее совпавшее.
+*/
+@media (max-width: 48rem) {
+  .reg-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 820px) {
+    .reg-adaptive {
+      zoom: 0.94;
+    }
+  }
+  @media (max-height: 760px) {
+    .reg-adaptive {
+      zoom: 0.87;
+    }
+  }
+  @media (max-height: 700px) {
+    .reg-adaptive {
+      zoom: 0.82;
+    }
+  }
+  @media (max-height: 660px) {
+    .reg-adaptive {
+      zoom: 0.76;
+    }
+  }
+  @media (max-height: 620px) {
+    .reg-adaptive {
+      zoom: 0.7;
+    }
+  }
+  @media (max-height: 560px) {
+    .reg-adaptive {
+      zoom: 0.62;
+    }
+  }
+}
+
+/*
+  Страница входа короче регистрации (~530px контента), поэтому её хватает
+  меньшего запаса: ужимается только на очень низких экранах.
+*/
+@media (max-width: 48rem) {
+  .login-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 640px) {
+    .login-adaptive {
+      zoom: 0.9;
+    }
+  }
+  @media (max-height: 560px) {
+    .login-adaptive {
+      zoom: 0.8;
+    }
+  }
+}
