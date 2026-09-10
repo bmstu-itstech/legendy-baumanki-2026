@@ -4,7 +4,7 @@ from typing import Any
 import uuid6
 from jose import JWTError, jwt
 from src.auth.config import auth_config
-from src.auth.domain.entities import AuthUser, TokenData, TokenType
+from src.auth.domain.entities import AuthenticatedUser, TokenData, TokenType
 from src.auth.domain.exceptions import RefreshTokenNotValid
 from src.auth.domain.interfaces.token_auth import ITokenAuth, TResponse
 from src.auth.domain.interfaces.token_provider import ITokenProvider
@@ -91,7 +91,7 @@ class JWTAuth(ITokenAuth):
         self._request = request
         self._response = response
 
-    async def set_tokens(self, user: AuthUser) -> None:
+    async def set_tokens(self, user: AuthenticatedUser) -> None:
         data = {
             "uid": user.id,
             "is_superuser": user.is_superuser,
@@ -189,3 +189,7 @@ class JWTAuth(ITokenAuth):
             if tt == transport_type:
                 return transports
         return []
+
+    @property
+    def request(self):
+        return self._request

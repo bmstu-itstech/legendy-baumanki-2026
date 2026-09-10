@@ -1,6 +1,6 @@
 import abc
 
-from src.users.domain.interfaces.user_repo import IUserRepository
+from src.auth.domain.interfaces.user_repo import IUserRepository
 
 
 class IUserUnitOfWork(abc.ABC):

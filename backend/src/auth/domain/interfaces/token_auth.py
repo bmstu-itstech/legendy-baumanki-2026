@@ -1,7 +1,7 @@
 import abc
 from typing import TypeVar
 
-from src.auth.domain.entities import AuthUser, TokenData, TokenType
+from src.auth.domain.entities import AuthenticatedUser, TokenData, TokenType
 from src.auth.domain.interfaces.token_provider import ITokenProvider
 from src.auth.domain.interfaces.token_storage import ITokenStorage
 
@@ -24,7 +24,7 @@ class ITokenAuth(abc.ABC):
         self._storage = storage
 
     @abc.abstractmethod
-    async def set_tokens(self, user: AuthUser) -> None:
+    async def set_tokens(self, user: AuthenticatedUser) -> None:
         """Устанавливает access и refresh токены в ответе."""
 
     @abc.abstractmethod
@@ -51,3 +51,8 @@ class ITokenAuth(abc.ABC):
         Если в ходе обработки запроса был сохранён обновлённый access-токен,
         то он вставляется в ответ.
         """
+
+    @property
+    @abc.abstractmethod
+    def request(self):
+        """Что-то типо костыля"""

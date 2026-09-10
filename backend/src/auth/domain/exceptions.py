@@ -1,4 +1,9 @@
-from src.core.domain.exceptions.exceptions import BadRequest, NotAuthenticated
+from src.core.domain.exceptions.exceptions import (
+    AlreadyExists,
+    BadRequest,
+    NotAuthenticated,
+    NotFound,
+)
 
 
 class ErrorCode:
@@ -9,6 +14,14 @@ class ErrorCode:
     EMAIL_TAKEN = "Email is already taken."
     REFRESH_TOKEN_NOT_VALID = "Refresh token is not valid."
     REFRESH_TOKEN_REQUIRED = "Refresh token is required either in the body or cookie."
+
+
+class UserAlreadyExists(AlreadyExists):
+    detail = "User already exists."
+
+
+class UserNotFound(NotFound):
+    detail = "User with this data not found"
 
 
 class AuthRequired(NotAuthenticated):

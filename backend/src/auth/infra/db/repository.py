@@ -1,10 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.users.domain.entities import User, UserCreate
-from src.users.domain.exceptions import UserAlreadyExists, UserNotFound
-from src.users.domain.interfaces.user_repo import IUserRepository
-from src.users.infra.db.orm import UserModel
+from src.auth.domain.entities import User, UserCreate
+from src.auth.domain.exceptions import UserAlreadyExists, UserNotFound
+from src.auth.domain.interfaces.user_repo import IUserRepository
+from src.auth.infra.db.orm import UserModel
 
 
 class PGUserRepository(IUserRepository):
@@ -29,20 +29,16 @@ class PGUserRepository(IUserRepository):
         stmt = select(UserModel).where(UserModel.id == user_id)
         result = await self.session.execute(stmt)
         obj: UserModel | None = result.scalar_one_or_none()
-
         if not obj:
             raise UserNotFound(detail=f"User with id {user_id} not found")
-
         return self._to_domain(obj)
 
     async def get_by_email(self, email: str) -> User:
         stmt = select(UserModel).where(UserModel.email == email)
         result = await self.session.execute(stmt)
         obj: UserModel | None = result.scalar_one_or_none()
-
         if not obj:
             raise UserNotFound(detail=f"User with email {email} not found")
-
         return self._to_domain(obj)
 
     @staticmethod

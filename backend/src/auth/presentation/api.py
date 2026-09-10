@@ -1,12 +1,24 @@
 from fastapi import APIRouter
-from src.auth.domain.dtos import Credentials
-from src.auth.domain.entities import AuthUser
-from src.auth.presentation.dependencies import PasswordHasherDep, TokenAuthDep
-from src.auth.usecases.authentication import authenticate
+from src.auth.domain.dtos import Credentials, UserCreatedDTO, UserCreateDTO
+from src.auth.domain.entities import AuthenticatedUser
+from src.auth.presentation.dependencies import (
+    PasswordHasherDep,
+    TokenAuthDep,
+    UserUoWDep,
+)
+from src.auth.usecases import authenticate, register_user
 from src.core.domain.exceptions.exceptions import NotAuthenticated
-from src.users.presentation.dependencies import UserUoWDep
 
 auth_api_router = APIRouter()
+
+
+@auth_api_router.post("/register", response_model=UserCreatedDTO)
+async def register(
+    user_data: UserCreateDTO,
+    pwd_hasher: PasswordHasherDep,
+    uow: UserUoWDep,
+):
+    return await register_user(user_data, pwd_hasher, uow)
 
 
 @auth_api_router.post("/login")
@@ -34,8 +46,8 @@ async def logout(auth: TokenAuthDep):
 
 @auth_api_router.get("/me")
 # @access_control(open=True)
-async def get_me(auth: TokenAuthDep) -> AuthUser:
-    user = auth._request.state.user
+async def get_me(auth: TokenAuthDep) -> AuthenticatedUser:
+    user = auth.request.state.user
     if not user:
         raise NotAuthenticated()
     return user

@@ -1,9 +1,8 @@
-from src.auth.domain.entities import AuthUser
+from src.auth.domain.entities import AuthenticatedUser, User
 from src.auth.domain.exceptions import InvalidCredentials
 from src.auth.domain.interfaces.token_auth import ITokenAuth
+from src.auth.domain.interfaces.user_uow import IUserUnitOfWork
 from src.core.domain.interfaces.password_hasher import IPasswordHasher
-from src.users.domain.entities import User
-from src.users.domain.interfaces.user_uow import IUserUnitOfWork
 
 
 async def authenticate(
@@ -20,7 +19,7 @@ async def authenticate(
             raise InvalidCredentials()
 
         await auth.set_tokens(
-            AuthUser(
+            AuthenticatedUser(
                 id=user.id,
                 is_superuser=user.is_superuser,
             )

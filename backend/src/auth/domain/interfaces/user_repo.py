@@ -1,6 +1,6 @@
 import abc
 
-from src.users.domain.entities import User, UserCreate
+from src.auth.domain.entities import User, UserCreate
 
 
 class IUserRepository(abc.ABC):

@@ -1,7 +1,7 @@
 from src.auth.domain.entities import TokenType
 from src.auth.domain.exceptions import RefreshTokenNotValid
+from src.auth.infra.db.uow import PGUserUnitOfWork
 from src.auth.presentation.dependencies import get_token_auth
-from src.users.infra.db.uow import PGUserUnitOfWork
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -72,7 +72,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     ):
         super().__init__(app)
         self.secure_paths = secure_paths or ["/api", "/admin", "/docs", "/redoc"]
-        self.allowed_paths = allowed_paths or ["/api/auth", "/api/users"]
+        self.allowed_paths = allowed_paths or ["/api/auth", "/api/profile"]
 
     async def dispatch(self, request: Request, call_next):
         request_path = str(request.url)

@@ -1,7 +1,7 @@
+from src.auth.domain.dtos import UserCreateDTO
+from src.auth.domain.entities import User, UserCreate
+from src.auth.domain.interfaces.user_uow import IUserUnitOfWork
 from src.core.domain.interfaces.password_hasher import IPasswordHasher
-from src.users.domain.dtos import UserCreateDTO
-from src.users.domain.entities import User, UserCreate
-from src.users.domain.interfaces.user_uow import IUserUnitOfWork
 
 
 async def register_user(
@@ -10,7 +10,7 @@ async def register_user(
     uow: IUserUnitOfWork,
 ) -> User:
     user_data = UserCreate(
-        passhash=pwd_hasher.hash(user_data.password),
+        passhash=pwd_hasher.hash(user_data.password.get_secret_value()),
         **user_data.model_dump(mode="json"),
     )
     async with uow:

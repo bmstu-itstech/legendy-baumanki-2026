@@ -2,10 +2,10 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from src.core.config import settings
-from src.db.base import BaseModel
 
 # Импорт моделей обязателен для инициализации БД
+from src.core.config import settings
+from src.db.base import BaseModel
 
 config = context.config
 if config.config_file_name is not None:

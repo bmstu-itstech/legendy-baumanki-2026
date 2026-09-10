@@ -5,6 +5,8 @@ from src.auth.config import auth_config
 from src.auth.domain.entities import TokenType
 from src.auth.domain.interfaces.token_auth import ITokenAuth
 from src.auth.domain.interfaces.token_storage import ITokenStorage
+from src.auth.domain.interfaces.user_uow import IUserUnitOfWork
+from src.auth.infra.db.uow import PGUserUnitOfWork
 from src.auth.infra.services.inmemory_token_storage import InMemoryTokenStorage
 from src.auth.infra.services.jwt import JWTAuth, JWTProvider
 from src.auth.infra.transports.cookie import CookieTransport
@@ -45,6 +47,11 @@ async def get_token_auth(request: Request, response: Response = None) -> ITokenA
     )
 
 
+def get_user_uow() -> IUserUnitOfWork:
+    return PGUserUnitOfWork()
+
+
 TokenAuthDep = Annotated[ITokenAuth, Depends(get_token_auth)]
 TokenStorageDep = Annotated[ITokenStorage, Depends(get_token_storage)]
 PasswordHasherDep = Annotated[IPasswordHasher, Depends(get_password_hasher)]
+UserUoWDep = Annotated[IUserUnitOfWork, Depends(get_user_uow)]
