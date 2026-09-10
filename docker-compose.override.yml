@@ -1,0 +1,38 @@
+# Подключается автоматически при `docker compose up` (docker compose сам
+# мёржит docker-compose.yml + docker-compose.override.yml, если он лежит
+# рядом). Для прод-раскладки без хот-релоада и бинд-маунтов запускайте
+# только базовый файл явно:
+#   docker compose -f docker-compose.yml up -d --build
+services:
+  postgres:
+    # Порт наружу — только для локальной отладки (psql/DBeaver с хоста).
+    ports:
+      - "5432:5432"
+
+  backend:
+    volumes:
+      - ./backend:/app
+      # Перекрывает бинд-маунт выше — venv, собранный внутри образа,
+      # не подменяется (и не теряется) содержимым хоста.
+      - backend_venv:/app/.venv
+      - backend_secrets:/app/secrets
+    environment:
+      UVICORN_RELOAD: "true"
+
+  frontend:
+    build:
+      # Останавливаемся на стадии с установленными node_modules — сборка
+      # standalone для дев-режима с хот-релоадом не нужна.
+      target: deps
+    command: pnpm dev
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+
+volumes:
+  backend_venv:
+  frontend_node_modules:
+  frontend_next:

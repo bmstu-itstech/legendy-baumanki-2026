@@ -11,6 +11,15 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DOMAIN: str = os.environ.get("DOMAIN")
     SECRET_KEY: str = os.environ.get("SECRET_KEY")
+    # Через запятую, напр. "http://localhost:3000,https://legendy-baumanki.ru".
+    # Тип нарочно str, а не list[str] — pydantic-settings иначе пытается
+    # распарсить значение из окружения как JSON-массив и падает на обычной
+    # строке. Список собирается в cors_origins() ниже.
+    CORS_ORIGINS: str = os.environ.get("CORS_ORIGINS", "http://localhost:3000")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     DB_TYPE: Literal["POSTGRESQL", "ASYNC_POSTGRESQL"] = "POSTGRESQL"
     DB_NAME: str = os.environ.get("DB_NAME")

@@ -3,6 +3,7 @@
 
 # dependencies
 frontend/node_modules
+frontend/.pnpm-store
 frontend/.pnp
 frontend/.pnp.*
 frontend/.yarn/*
@@ -50,3 +51,7 @@ next-env.d.ts
 # backend secrets / local env
 backend/secrets
 backend/.env
+
+# docker-compose root env
+/.env
+!/.env.example
