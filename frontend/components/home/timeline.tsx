@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { CoffeeCup, DashedSwoosh, Star } from "./decor";
+import { CoffeeCup, DashedSwoosh, Star } from "@/components/ui/decor";
 
 const STAGES = [
   {

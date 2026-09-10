@@ -1,7 +1,7 @@
 import Image from "next/image";
 
-import { ArrowUpRight, Star } from "./decor";
-import { REGISTRATION_URL } from "./site-data";
+import { ArrowUpRight, Star } from "@/components/ui/decor";
+import { REGISTRATION_URL } from "@/components/site-data";
 
 export function About() {
   return (

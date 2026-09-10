@@ -166,3 +166,36 @@ body {
     }
   }
 }
+
+/*
+  Заголовок хиро (lg: text-[7.5rem] + кнопка lg:h-[125px]) рассчитан на
+  высокие мониторы. На широких, но невысоких ноутбучных экранах вроде
+  1366×768 он не помещается в h-[calc(100svh-5rem)] и обрезается
+  overflow-hidden секции — сжимаем через zoom, начиная с lg (64rem),
+  по мере уменьшения высоты.
+*/
+@media (min-width: 64rem) {
+  .hero-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 860px) {
+    .hero-adaptive {
+      zoom: 0.9;
+    }
+  }
+  @media (max-height: 800px) {
+    .hero-adaptive {
+      zoom: 0.82;
+    }
+  }
+  @media (max-height: 740px) {
+    .hero-adaptive {
+      zoom: 0.74;
+    }
+  }
+  @media (max-height: 680px) {
+    .hero-adaptive {
+      zoom: 0.66;
+    }
+  }
+}

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { NAV_ITEMS, REGISTRATION_URL } from "./site-data";
+import { NAV_ITEMS, REGISTRATION_URL } from "@/components/site-data";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -73,7 +73,7 @@ export function SiteHeader() {
           aria-controls="mobile-menu"
           aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"}
           onClick={() => setMenuOpen((open) => !open)}
-          className="ml-auto flex size-11 items-center justify-center xl:hidden"
+          className="ml-auto flex size-11 cursor-pointer items-center justify-center xl:hidden"
         >
           <span className="relative block h-[18px] w-6" aria-hidden="true">
             <span

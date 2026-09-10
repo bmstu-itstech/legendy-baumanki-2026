@@ -93,7 +93,7 @@ export function GalleryGrid({
             autoFocus
             aria-label="Закрыть"
             onClick={close}
-            className="absolute top-3 right-3 flex size-12 items-center justify-center rounded-full text-3xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            className="absolute top-3 right-3 flex size-12 cursor-pointer items-center justify-center rounded-full text-3xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white"
           >
             ×
           </button>
@@ -107,7 +107,7 @@ export function GalleryGrid({
                   event.stopPropagation();
                   show(-1);
                 }}
-                className="absolute top-1/2 left-2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-4xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:left-6"
+                className="absolute top-1/2 left-2 flex size-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-4xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:left-6"
               >
                 ‹
               </button>
@@ -118,7 +118,7 @@ export function GalleryGrid({
                   event.stopPropagation();
                   show(1);
                 }}
-                className="absolute top-1/2 right-2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full text-4xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:right-6"
+                className="absolute top-1/2 right-2 flex size-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-4xl leading-none text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:right-6"
               >
                 ›
               </button>

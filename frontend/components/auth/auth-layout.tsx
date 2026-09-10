@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 
-import { DashedSwoosh, Sparkle } from "./decor";
+import { DashedSwoosh, Sparkle } from "@/components/ui/decor";
 
 /**
  * Общий каркас страниц входа и регистрации: фон, звезда, декоративные
@@ -56,7 +56,7 @@ export function AuthLayout({
         */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute right-0 bottom-0 w-[340px] md:hidden"
+          className="pointer-events-none absolute right-0 bottom-0 w-[340px] md:w-[clamp(340px,47vw,490px)] lg:hidden"
         >
           <Image
             src="/assets/registration-decor-mobile.svg"
@@ -68,7 +68,7 @@ export function AuthLayout({
         </div>
 
         <div
-          className={`container-page relative z-10 flex flex-1 flex-col pb-6 ${contentClassName}`}
+          className={`container-page relative z-10 flex flex-1 flex-col justify-center pb-6 ${contentClassName}`}
         >
           {children}
         </div>

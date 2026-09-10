@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { SOCIAL_LINKS } from "./site-data";
+import { SOCIAL_LINKS } from "@/components/site-data";
 
 export function SiteFooter() {
   return (

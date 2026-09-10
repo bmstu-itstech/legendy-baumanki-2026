@@ -20,7 +20,7 @@ frontend/out/
 
 # production
 frontend/build
-
+.claude
 # misc
 .DS_Store
 *.pem
@@ -33,6 +33,7 @@ frontend/.pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 frontend/.env*
+!frontend/.env.local.example
 
 # vercel
 .vercel

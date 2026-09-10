@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { ArrowUpRight, Star } from "./decor";
+import { ArrowUpRight, Star } from "@/components/ui/decor";
 import { GalleryGrid } from "./gallery-grid";
-import { PHOTO_ALBUM_URL } from "./site-data";
+import { PHOTO_ALBUM_URL } from "@/components/site-data";
 
 const PHOTO_SLOTS = 5;
 const IMAGE_RE = /\.(jpe?g|png|webp|avif|gif|svg)$/i;

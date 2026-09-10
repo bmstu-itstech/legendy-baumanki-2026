@@ -1,9 +1,9 @@
-import { About } from "@/components/about";
-import { Gallery } from "@/components/gallery";
-import { Hero } from "@/components/hero";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-import { Timeline } from "@/components/timeline";
+import { About } from "@/components/home/about";
+import { Gallery } from "@/components/home/gallery";
+import { Hero } from "@/components/home/hero";
+import { Timeline } from "@/components/home/timeline";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 
 export default function Home() {
   return (
