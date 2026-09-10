@@ -23,7 +23,7 @@ async def create_profile(
                     **team.model_dump(mode="json"),
                 )
             )
-        profile = await uow.profiles.create(profile_data)
+        await uow.commit()
     email = await email_provider.get_user_email(profile.user_id)
     return ProfileReadDTO(
         **profile.model_dump(mode="json"),

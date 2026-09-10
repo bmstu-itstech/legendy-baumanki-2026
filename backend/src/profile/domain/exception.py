@@ -1,4 +1,5 @@
 from src.core.domain.exceptions.exceptions import (
+    AlreadyExists,
     AppException,
     NotFound,
     PermissionDenied,
@@ -8,6 +9,10 @@ from starlette import status
 
 class ProfileNotFound(NotFound):
     detail = "Profile not found."
+
+
+class ProfileAlreadyExists(AlreadyExists):
+    detail = "Profile already exists."
 
 
 class TeamIsFull(AppException):

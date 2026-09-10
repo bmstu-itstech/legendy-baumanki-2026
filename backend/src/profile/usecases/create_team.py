@@ -23,4 +23,5 @@ async def create_team(
     )
     async with uow:
         team = await uow.teams.create_team(team_data)
+        await uow.commit()
     return TeamCreatedDTO(**team.model_dump(mode="json"))

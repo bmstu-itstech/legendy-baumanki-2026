@@ -48,7 +48,10 @@ class TeamModel(BaseModel):
 class ProfileModel(BaseModel):
     __tablename__ = "profiles"
 
-    user_id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=False,
+    )
 
     full_name: Mapped[str] = mapped_column(
         String(127),

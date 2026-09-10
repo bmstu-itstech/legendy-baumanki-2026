@@ -15,9 +15,7 @@ class UserModel(BaseModel):
 
     email: Mapped[str] = mapped_column(String(length=255), unique=True, nullable=False)
 
-    passhash: Mapped[str] = mapped_column(
-        String(length=127), unique=True, nullable=False
-    )
+    passhash: Mapped[str] = mapped_column(String(length=127), nullable=False)
 
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

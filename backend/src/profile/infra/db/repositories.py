@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.profile.domain.entities import (
     Profile,
@@ -8,7 +9,11 @@ from src.profile.domain.entities import (
     TeamUpdate,
     TeamWithMembers,
 )
-from src.profile.domain.exception import ProfileNotFound, TeamNotFound
+from src.profile.domain.exception import (
+    ProfileAlreadyExists,
+    ProfileNotFound,
+    TeamNotFound,
+)
 from src.profile.domain.interfaces.profile_repo import IProfileRepository
 from src.profile.domain.interfaces.team_repo import ITeamRepository
 from src.profile.infra.db.orm import ProfileModel, TeamModel
@@ -22,7 +27,16 @@ class PGProfileRepository(IProfileRepository):
     async def create(self, profile: ProfileCreate) -> Profile:
         obj = ProfileModel(**profile.model_dump(mode="json"))
         self.session.add(obj)
-        await self.session.flush()
+        try:
+            await self.session.flush()
+        except IntegrityError as e:
+            try:
+                detail = (
+                    "Profile can't be created. " + str(e.orig).split("\nDETAIL:  ")[1]
+                )
+            except IndexError:
+                detail = "Profile can't be created due to integrity error."
+            raise ProfileAlreadyExists(detail=detail)
         return self._to_domain(obj)
 
     async def get_by_id(self, user_id: int) -> Profile:

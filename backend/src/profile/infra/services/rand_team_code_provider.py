@@ -3,7 +3,7 @@ import secrets
 from src.profile.domain.interfaces.team_code_provider import ITeamCodeProvider
 
 
-class HashlibTeamCodeProvider(ITeamCodeProvider):
+class RandTeamCodeProvider(ITeamCodeProvider):
     def __init__(
         self, length: int, alphabet: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
     ):

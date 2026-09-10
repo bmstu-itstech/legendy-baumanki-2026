@@ -11,6 +11,7 @@ async def update_profile(
     async with uow:
         profile_data = profile_dto.to_domain()
         profile = await uow.profiles.update(profile_data)
+        await uow.commit()
     email = await email_provider.get_user_email(profile.user_id)
     return ProfileReadDTO(
         **profile.model_dump(mode="json"),

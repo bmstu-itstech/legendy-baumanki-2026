@@ -21,4 +21,5 @@ async def update_team(
                 **team_dto.model_dump(mode="json"),
             )
         )
+        await uow.commit()
     return TeamWithMembersDTO.from_domain(team)

@@ -19,3 +19,4 @@ async def join_team(
                 **team.model_dump(mode="json"),
             )
         )
+        await uow.commit()
