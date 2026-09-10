@@ -1,0 +1,29 @@
+[project]
+name = "backend"
+version = "0.2.0"
+description = "Бэкенд для сайта Легенд Бауманки 2026"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi>=0.141.1",
+    "python-jose>=3.4.0",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "sqladmin>=0.31.1",
+    "sqlalchemy>=2.0.52",
+    "uuid6>=2025.0.1",
+    "uvicorn>=0.52.4",
+    "asyncpg>=0.31.0",
+    "alembic>=1.19.2",
+    "psycopg>=3.3.5",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "ruff>=0.16.6",
+]
+
+[mypy]
+explicit_package_bases = true
