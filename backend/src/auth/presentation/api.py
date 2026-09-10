@@ -17,8 +17,9 @@ async def register(
     user_data: UserCreateDTO,
     pwd_hasher: PasswordHasherDep,
     uow: UserUoWDep,
+    auth: TokenAuthDep,
 ):
-    return await register_user(user_data, pwd_hasher, uow)
+    return await register_user(user_data, pwd_hasher, uow, auth)
 
 
 @auth_api_router.post("/login")

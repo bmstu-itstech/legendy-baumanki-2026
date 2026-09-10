@@ -78,7 +78,18 @@ class PGTeamRepository(ITeamRepository):
         obj = TeamModel(**team_data.model_dump(mode="json"))
         self.session.add(obj)
         await self.session.flush()
-        return self._to_domain(obj)
+        # Не через _to_domain(obj): у только что созданной команды точно
+        # нет участников, а неявное обращение к obj.members/obj.leader вне
+        # await session.execute(...) валит AsyncSession с MissingGreenlet.
+        return Team(
+            id=obj.id,
+            public_code=obj.public_code,
+            name=obj.name,
+            leader_id=obj.leader_id,
+            members=[],
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
 
     async def get_team_by_id(self, team_id: int) -> Team:
         stmt = select(TeamModel).where(TeamModel.id == team_id)
@@ -108,7 +119,7 @@ class PGTeamRepository(ITeamRepository):
             return None
         return self._to_domain_with_members(obj)
 
-    async def update_team(self, team_data: TeamUpdate) -> Team:
+    async def update_team(self, team_data: TeamUpdate) -> None:
         stmt = select(TeamModel).where(TeamModel.id == team_data.id)
         result = await self.session.execute(stmt)
         obj: TeamModel | None = result.scalar_one_or_none()
@@ -119,7 +130,21 @@ class PGTeamRepository(ITeamRepository):
         ).items():
             setattr(obj, field, value)
         await self.session.flush()
-        return self._to_domain(obj)
+        # Ничего не возвращаем: обращение к obj.members/obj.leader сразу
+        # после flush() ненадёжно, когда в этом же uow до этого напрямую
+        # (в обход relationship-API) менялся profiles.team_id — SQLAlchemy
+        # считает связь протухшей и пытается перезагрузить её синхронно,
+        # что валит AsyncSession с MissingGreenlet. Ни один вызывающий код
+        # не использует возвращаемое значение этого метода.
+
+    async def delete_team(self, team_id: int) -> None:
+        stmt = select(TeamModel).where(TeamModel.id == team_id)
+        result = await self.session.execute(stmt)
+        obj: TeamModel | None = result.scalar_one_or_none()
+        if not obj:
+            raise TeamNotFound(detail=f"Team with id {team_id} not found")
+        await self.session.delete(obj)
+        await self.session.flush()
 
     @staticmethod
     def _to_domain(obj: TeamModel) -> Team:

@@ -25,14 +25,20 @@ class TeamModel(BaseModel):
         ForeignKey("profiles.user_id"),
     )
 
+    # lazy="selectin" — обращения к этим связям (Team._to_domain и
+    # _to_domain_with_members) неявные, а дефолтный lazy="select" требует
+    # синхронного greenlet-контекста и падает с MissingGreenlet на
+    # AsyncSession.
     leader: Mapped["ProfileModel"] = relationship(
         back_populates="leader_of",
         foreign_keys="TeamModel.leader_id",
+        lazy="selectin",
     )
 
     members: Mapped[list["ProfileModel"]] = relationship(
         back_populates="team",
         foreign_keys="ProfileModel.team_id",
+        lazy="selectin",
     )
 
     created_at: Mapped[dt.datetime] = mapped_column(

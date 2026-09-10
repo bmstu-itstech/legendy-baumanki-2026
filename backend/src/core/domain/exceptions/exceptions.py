@@ -4,6 +4,11 @@ from src.core.domain.exceptions import statuses
 class AppException(Exception):
     status_code = statuses.HTTP_500_INTERNAL_SERVER_ERROR
     detail = "Server error"
+    # Стабильный машиночитаемый код — по нему фронтенд подбирает
+    # локализованный текст (см. frontend/lib/api/errors.ts). detail может
+    # быть динамическим (например, содержать конкретный email), поэтому
+    # сопоставлять локализацию нужно по error_code, а не по тексту detail.
+    error_code = "internal_error"
     extra: dict | None = None
 
     def __init__(
@@ -18,23 +23,28 @@ class AppException(Exception):
 class PermissionDenied(AppException):
     status_code = statuses.HTTP_403_FORBIDDEN
     detail = "Permission denied"
+    error_code = "permission_denied"
 
 
 class NotFound(AppException):
     status_code = statuses.HTTP_404_NOT_FOUND
     detail = "Not found"
+    error_code = "not_found"
 
 
 class AlreadyExists(AppException):
     status_code = statuses.HTTP_409_CONFLICT
     detail = "Already exists"
+    error_code = "already_exists"
 
 
 class BadRequest(AppException):
     status_code = statuses.HTTP_400_BAD_REQUEST
     detail = "Bad Request"
+    error_code = "bad_request"
 
 
 class NotAuthenticated(AppException):
     status_code = statuses.HTTP_401_UNAUTHORIZED
     detail = "User not authenticated"
+    error_code = "not_authenticated"

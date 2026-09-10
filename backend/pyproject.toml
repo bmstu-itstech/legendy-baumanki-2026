@@ -17,6 +17,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "alembic>=1.19.2",
     "psycopg>=3.3.5",
+    "itsdangerous>=2.2.0",
 ]
 
 [dependency-groups]

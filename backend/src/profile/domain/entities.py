@@ -26,6 +26,7 @@ class ProfileUpdate(CustomModel):
     full_name: str | None = None
     group: str | None = None
     telegram: str | None = None
+    team_id: int | None = None
 
 
 class TeamCreate(CustomModel):

@@ -1,9 +1,10 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqladmin import Admin
-from src.auth.presentation.admin import UserAdmin
+from src.auth.presentation.admin import AdminAuth, UserAdmin
 from src.auth.presentation.api import auth_api_router
 from src.auth.presentation.middlewares import (
     AuthenticationMiddleware,
@@ -25,19 +26,39 @@ app = FastAPI(
 @app.exception_handler(AppException)
 async def app_exception_handler(_: Request, exc: AppException):
     return JSONResponse(
-        status_code=exc.status_code, content={"detail": exc.detail, **(exc.extra or {})}
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "error_code": exc.error_code,
+            **(exc.extra or {}),
+        },
     )
 
 
 # app.add_middleware(SecurityMiddleware)
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(JWTRefreshMiddleware)
+# Добавлена последней, чтобы стать самой внешней middleware и
+# обрабатывать CORS-preflight (OPTIONS) раньше остальных.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    # Фронтенд читает access-токен из заголовка ответа Authorization
+    # (см. frontend/lib/api/client.ts) — без явного expose_headers браузер
+    # скрывает этот заголовок от JS, даже если сервер его прислал.
+    expose_headers=["Authorization"],
+)
 
 app.include_router(auth_api_router, prefix=f"{settings.API_V1_STR}/auth")
 app.include_router(profiles_api_router, prefix=f"{settings.API_V1_STR}/profiles")
 app.include_router(teams_api_router, prefix=f"{settings.API_V1_STR}/teams")
 
-admin = Admin(app, engine)
+admin = Admin(
+    app, engine, authentication_backend=AdminAuth(secret_key=settings.SECRET_KEY)
+)
 admin.add_view(UserAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(TeamAdmin)

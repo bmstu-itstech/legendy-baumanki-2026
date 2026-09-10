@@ -10,7 +10,7 @@ class InMemoryTokenStorage(ITokenStorage):
             _tokens[token.jti] = token
 
     async def revoke_tokens_by_user(self, user_id: int) -> None:
-        for jti, token in _tokens.items():
+        for jti, token in list(_tokens.items()):
             if token.uid == user_id:
                 _tokens.pop(jti)
 

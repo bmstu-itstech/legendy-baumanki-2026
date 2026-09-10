@@ -48,8 +48,8 @@ class TeamMemberDTO(CustomModel):
     telegram: str
 
     @classmethod
-    def from_profile(cls, profile: Profile):
-        return TeamMemberDTO(**profile.model_dump(mode="json"))
+    def from_profile(cls, profile: Profile, email: str):
+        return TeamMemberDTO(**profile.model_dump(mode="json"), email=email)
 
 
 class TeamWithMembersDTO(CustomModel):
@@ -60,13 +60,16 @@ class TeamWithMembersDTO(CustomModel):
     leader: TeamMemberDTO
 
     @classmethod
-    def from_domain(cls, team: TeamWithMembers) -> Self:
+    def from_domain(cls, team: TeamWithMembers, emails: dict[int, str]) -> Self:
         return cls(
             id=team.id,
             public_code=team.public_code,
             name=team.name,
-            leader=TeamMemberDTO.from_profile(team.leader),
-            members=[TeamMemberDTO.from_profile(member) for member in team.members],
+            leader=TeamMemberDTO.from_profile(team.leader, emails[team.leader.user_id]),
+            members=[
+                TeamMemberDTO.from_profile(member, emails[member.user_id])
+                for member in team.members
+            ],
         )
 
 

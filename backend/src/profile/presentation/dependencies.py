@@ -6,8 +6,8 @@ from src.profile.domain.interfaces.email_provider import IEmailProvider
 from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 from src.profile.domain.interfaces.team_code_provider import ITeamCodeProvider
 from src.profile.infra.db.uow import PGProfileUnitOfWork
+from src.profile.infra.services.pg_email_provider import PGEmailProvider
 from src.profile.infra.services.rand_team_code_provider import RandTeamCodeProvider
-from src.profile.infra.services.stub_email_provider import StubEmailProvider
 
 
 def get_profile_uow() -> IProfileUnitOfWork:
@@ -15,7 +15,7 @@ def get_profile_uow() -> IProfileUnitOfWork:
 
 
 def get_email_provider() -> IEmailProvider:
-    return StubEmailProvider()
+    return PGEmailProvider()
 
 
 def get_team_code_provider() -> ITeamCodeProvider:
