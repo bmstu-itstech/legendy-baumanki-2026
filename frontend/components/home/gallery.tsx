@@ -1,25 +1,22 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { ArrowUpRight, Star } from "@/components/ui/decor";
 import { GalleryGrid } from "./gallery-grid";
 import { PHOTO_ALBUM_URL } from "@/components/site-data";
 
 const PHOTO_SLOTS = 5;
-const IMAGE_RE = /\.(jpe?g|png|webp|avif|gif|svg)$/i;
 
-function getGalleryPhotos(): string[] {
-  try {
-    return fs
-      .readdirSync(path.join(process.cwd(), "public", "gallery"))
-      .filter((name) => IMAGE_RE.test(name))
-      .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
-      .slice(0, PHOTO_SLOTS)
-      .map((name) => `/gallery/${name}`);
-  } catch {
-    return [];
-  }
-}
+// Захардкожено вместо чтения public/gallery через fs.readdirSync при
+// рендере: раньше набор фото на сайте зависел от того, что физически
+// лежит на диске в момент сборки/рендера — незакоммиченные файлы в
+// public/gallery/ (как только что было) молча давали пустые слоты после
+// git clone / докер-билда. Чтобы добавить или заменить фото — положите
+// файл в public/gallery/ и добавьте его путь в этот список.
+const GALLERY_PHOTOS = [
+  "/gallery/2mLAIJQBBfOR3zW1k6G0n8aoS6A_WQJPgpa8FlXMBqDrvTLkgsvD7S7HyREWfbS8ZZ4XdgpPn9av1_83z7Kn1SQ-.jpg",
+  "/gallery/i2pKYxbQ8d8k95_twL5X9TyP2jiSrADJV_AfwL3SpQ-f9D5j9L2VxUmGbYY0fuMCtdytsYIaP7hNKP4XnrZVXHNd.jpg",
+  "/gallery/rZjO36gCCcswL2zK5WOHsZqYmPW8WBdn8g0VqhxpYSSCF9w82idU2n8d1oKNU5rEiaG0S25petG1qP5UgtUSXLRm.jpg",
+  "/gallery/srsQf664U8TXUGfCGyfJx4_5h6KyIz1dnAdxGcpCtjBs2XL-gh2_HqI-2TYp-HIAt9Uy3jq7_3w67nwTCmU9kRBR.jpg",
+  "/gallery/UW6EfF6VStY2csUKHA0hdYAzFQFGlxUr--rA1c-6xrZ-Owso_jZ2YQgkcfxqQtDQemHlLZwX5ENa_mJ78p8zinki.jpg",
+];
 
 const STATS = [
   { value: "449", label: "сформированных команд" },
@@ -28,8 +25,6 @@ const STATS = [
 ] as const;
 
 export function Gallery() {
-  const photos = getGalleryPhotos();
-
   return (
     <section
       id="gallery"
@@ -65,7 +60,7 @@ export function Gallery() {
         </dl>
 
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:mt-16 lg:gap-x-[96px] lg:gap-y-[73px]">
-          <GalleryGrid photos={photos} slots={PHOTO_SLOTS} />
+          <GalleryGrid photos={GALLERY_PHOTOS} slots={PHOTO_SLOTS} />
 
           <a
             href={PHOTO_ALBUM_URL}
