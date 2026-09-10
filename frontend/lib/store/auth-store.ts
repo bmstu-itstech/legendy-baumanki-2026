@@ -14,6 +14,13 @@ type AuthState = {
   user: AuthenticatedUser | null;
   status: AuthStatus;
   error: string | null;
+  /**
+   * true после первого разрешения hydrate() (успех или провал). Гварды
+   * (route-guard.tsx) ориентируются на этот флаг, а не на status, — иначе
+   * их fallback перекрывал бы форму логина каждый раз, когда login()/
+   * register() на секунду переводят status в "loading".
+   */
+  hasHydrated: boolean;
 };
 
 type AuthActions = {
@@ -35,20 +42,21 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   user: null,
   status: "idle",
   error: null,
+  hasHydrated: false,
 
   hydrate: async () => {
     if (get().status !== "idle") return;
     if (!API_BASE_URL) {
-      set({ status: "unauthenticated" });
+      set({ status: "unauthenticated", hasHydrated: true });
       return;
     }
     set({ status: "loading" });
     try {
       const user = await authApi.me();
-      set({ user, status: "authenticated", error: null });
+      set({ user, status: "authenticated", error: null, hasHydrated: true });
     } catch {
       tokenStore.clear();
-      set({ user: null, status: "unauthenticated" });
+      set({ user: null, status: "unauthenticated", hasHydrated: true });
     }
   },
 

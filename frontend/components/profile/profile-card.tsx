@@ -56,10 +56,10 @@ export function ProfileCard() {
   }
 
   const rows = [
-    { label: "ID", value: String(profile.userId), Icon: IdIcon },
-    { label: "Группа", value: profile.group, Icon: GroupFilledIcon },
-    { label: "Телеграм", value: profile.telegram, Icon: TelegramIcon },
-    { label: "Почта", value: profile.email, Icon: MailFilledIcon },
+    { label: "ID", value: String(profile.userId), Icon: IdIcon, labelPaddingLeft: 3 },
+    { label: "Группа", value: profile.group, Icon: GroupFilledIcon, labelPaddingLeft: 0 },
+    { label: "Телеграм", value: profile.telegram, Icon: TelegramIcon, labelPaddingLeft: 9 },
+    { label: "Почта", value: profile.email, Icon: MailFilledIcon, labelPaddingLeft: 4 },
   ];
 
   return (
@@ -74,7 +74,7 @@ export function ProfileCard() {
         </p>
 
         <div className="mt-6 flex w-full flex-col">
-          {rows.map(({ label, value, Icon }, index) => (
+          {rows.map(({ label, value, Icon, labelPaddingLeft }, index) => (
             <div
               key={label}
               className={`flex items-center gap-3 py-3 ${
@@ -82,7 +82,12 @@ export function ProfileCard() {
               }`}
             >
               <Icon className="h-5 w-auto shrink-0 text-ink" />
-              <span className="text-[0.8125rem] text-ink/70">{label}</span>
+              <span
+                className="text-[0.8125rem] text-ink/70"
+                style={{ paddingLeft: labelPaddingLeft }}
+              >
+                {label}
+              </span>
               <span className="ml-auto truncate text-[0.8125rem] font-medium text-ink">
                 {value}
               </span>

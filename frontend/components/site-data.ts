@@ -1,6 +1,6 @@
 export const REGISTRATION_URL = "/registration";
 
-export const PHOTO_ALBUM_URL = "#";
+export const PHOTO_ALBUM_URL = "https://vk.ru/album-26724538_309374167";
 
 export const NAV_ITEMS = [
   { label: "О проекте", href: "#about" },
@@ -21,8 +21,8 @@ export const SOCIAL_LINKS = [
     icon: "/assets/soc-vk.svg",
   },
   {
-    label: "vk.ru/studsovet_bmstu",
-    href: "https://vk.ru/studsovet_bmstu",
+    label: "max.ru/studsovet_bmstu",
+    href: "https://max.ru/studsovet_bmstu",
     icon: "/assets/soc-ok.svg",
   },
 ] as const;

@@ -5,10 +5,13 @@ import { useEffect, type ReactNode } from "react";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 
-// Пока auth-store не разрешился в "authenticated"/"unauthenticated"
-// (idle/loading — AuthHydrator ещё не дождался ответа /auth/me), не
-// показываем ни защищённый контент, ни форму логина, чтобы не мигать
-// не тем экраном перед редиректом.
+// Пока auth-store не разрешился в "authenticated"/"unauthenticated" в первый
+// раз (AuthHydrator ещё не дождался ответа /auth/me), не показываем ни
+// защищённый контент, ни форму логина, чтобы не мигать не тем экраном перед
+// редиректом. Дальше ориентируемся на hasHydrated, а не на status: login()/
+// register() на время своего запроса переводят status в "loading", и если бы
+// гварды реагировали на это, форма разлогинивалась бы (unmount) прямо в
+// момент отправки.
 function GuardFallback() {
   return (
     <div className="flex min-h-svh flex-1 items-center justify-center bg-mist">
@@ -20,27 +23,27 @@ function GuardFallback() {
 /** Страницы, доступные только авторизованным (например, /profile). */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const status = useAuthStore((state) => state.status);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") router.replace("/login");
-  }, [status, router]);
+    if (hasHydrated && status !== "authenticated") router.replace("/login");
+  }, [hasHydrated, status, router]);
 
-  if (status !== "authenticated") return <GuardFallback />;
+  if (!hasHydrated || status !== "authenticated") return <GuardFallback />;
   return <>{children}</>;
 }
 
 /** Страницы только для гостей (/login, /registration) — авторизованных уводим в профиль. */
 export function RequireGuest({ children }: { children: ReactNode }) {
   const status = useAuthStore((state) => state.status);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated") router.replace("/profile");
-  }, [status, router]);
+    if (hasHydrated && status === "authenticated") router.replace("/profile");
+  }, [hasHydrated, status, router]);
 
-  if (status === "idle" || status === "loading" || status === "authenticated") {
-    return <GuardFallback />;
-  }
+  if (!hasHydrated || status === "authenticated") return <GuardFallback />;
   return <>{children}</>;
 }

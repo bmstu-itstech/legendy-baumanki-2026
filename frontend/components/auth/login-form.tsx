@@ -71,6 +71,7 @@ export function LoginForm() {
             placeholder="Пароль"
             required
             className={`${inputClass} pr-11`}
+            style={{ paddingLeft: 16 }}
           />
           <button
             type="button"

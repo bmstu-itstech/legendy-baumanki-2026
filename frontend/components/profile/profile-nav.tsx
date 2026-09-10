@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 
@@ -15,12 +14,16 @@ const PROFILE_NAV_ITEMS = [
 ] as const;
 
 function useLogout() {
-  const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
 
   return async () => {
     await logout();
-    router.push("/");
+    // Полная перезагрузка вместо router.push — сбрасывает скролл и весь
+    // клиентский стейт гарантированно (см. "State and authentication" в
+    // node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md).
+    // Клиентский переход после логаута иногда оставлял скролл там же, где
+    // он был на предыдущей странице (уезжал к футеру на главной).
+    window.location.href = "/";
   };
 }
 

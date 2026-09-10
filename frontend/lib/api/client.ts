@@ -66,10 +66,17 @@ export async function apiFetch<T>(
     const body = await response.json().catch(() => null);
     const detailMessage =
       typeof body?.detail === "string" ? body.detail : body?.detail?.[0]?.msg;
+    // error_code — стабильный машиночитаемый код от бэкенда (см.
+    // AppException.error_code на бэкенде). detailMessage — сырой,
+    // технический текст (иногда на английском, иногда с чувствительными
+    // деталями вроде email) и используется только для логов/дебага, в UI
+    // его показывать нельзя — см. toErrorMessage в ./errors.
+    const code = typeof body?.error_code === "string" ? body.error_code : undefined;
     throw new ApiError(
       response.status,
       detailMessage ?? body?.message ?? response.statusText,
       body,
+      code,
     );
   }
 

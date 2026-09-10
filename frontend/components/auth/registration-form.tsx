@@ -88,6 +88,7 @@ export function RegistrationForm() {
             placeholder="ФИО"
             required
             className={inputClass}
+            style={{ paddingLeft: 12 }}
           />
         </Field>
 
@@ -101,6 +102,7 @@ export function RegistrationForm() {
             placeholder="Учебная группа"
             required
             className={inputClass}
+            style={{ paddingLeft: 2 }}
           />
         </Field>
 
@@ -127,6 +129,7 @@ export function RegistrationForm() {
             placeholder="Телеграм"
             required
             className={inputClass}
+            style={{ paddingLeft: 10 }}
           />
         </Field>
 
@@ -141,6 +144,7 @@ export function RegistrationForm() {
             placeholder="Пароль"
             required
             className={`${inputClass} pr-11`}
+            style={{ paddingLeft: 18 }}
           />
           <button
             type="button"

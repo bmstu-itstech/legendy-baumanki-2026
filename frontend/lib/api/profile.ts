@@ -39,12 +39,12 @@ export const profileApi = {
 
   getMe: () => apiFetch<ProfileReadDto>("/profiles/me").then(profileFromDto),
 
-  // Ответ PUT /profiles/me — усечённая схема (без email/team_code), поэтому
-  // после сохранения профиль перезапрашиваем через getMe(), а не доверяем
-  // телу этого ответа (см. profile-store.ts).
+  // Ответ PATCH /profiles/me — усечённая схема (без email/team_code),
+  // поэтому после сохранения профиль перезапрашиваем через getMe(), а не
+  // доверяем телу этого ответа (см. profile-store.ts).
   update: (payload: UpdateProfilePayload) =>
     apiFetch<unknown>("/profiles/me", {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify({
         user_id: payload.userId,
         full_name: payload.fullName,
