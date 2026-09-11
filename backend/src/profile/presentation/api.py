@@ -95,11 +95,10 @@ async def api_patch_team(
 async def api_join_team(
     team_code: str,
     uow: ProfileUoWDep,
-    email_provider: EmailProviderDep,
     auth: TokenAuthDep,
 ):
     uid = auth.request.state.user.id
-    return await join_team(uid, team_code, uow, email_provider)
+    return await join_team(uid, team_code, uow)
 
 
 @teams_api_router.post("/leave")

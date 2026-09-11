@@ -13,6 +13,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-5432}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
     volumes:
       - ${SECRETS_DIR:-./secrets}:/app/secrets:ro
     ports:
