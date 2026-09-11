@@ -24,9 +24,9 @@ class ITeamRepository(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def update_team(self, team_data: TeamUpdate) -> None:
+    async def update_team(self, team_data: TeamUpdate) -> Team:
         """Обновляет команду в репозитории"""
 
     @abc.abstractmethod
     async def delete_team(self, team_id: int) -> None:
-        """Удаляет команду"""
+        """Удаляет команду из репозитория."""

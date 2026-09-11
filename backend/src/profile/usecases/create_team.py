@@ -11,21 +11,23 @@ async def create_team(
     uow: IProfileUnitOfWork,
     code_provider: ITeamCodeProvider,
 ) -> TeamCreatedDTO:
-    public_code = code_provider.generate_code()
     async with uow:
         actor = await uow.profiles.get_by_id(actor_id)
-        if actor.team_id is not None:
-            raise UserAlreadyInTeam()
-
-        team_data = TeamCreate(
-            **team_dto.model_dump(mode="json"),
-            leader_id=actor_id,
-            public_code=public_code,
-        )
+    if actor.team_id is not None:
+        raise UserAlreadyInTeam()
+    public_code = code_provider.generate_code()
+    team_data = TeamCreate(
+        **team_dto.model_dump(mode="json"),
+        leader_id=actor_id,
+        public_code=public_code,
+    )
+    async with uow:
         team = await uow.teams.create_team(team_data)
-        # Лидер — тоже участник своей команды: без этого GET /teams/my
-        # сразу после создания не найдёт команду (JOIN идёт по
-        # profiles.team_id).
-        await uow.profiles.update(ProfileUpdate(user_id=actor_id, team_id=team.id))
+        await uow.profiles.update(
+            ProfileUpdate(
+                user_id=actor.user_id,
+                team_id=team.id,
+            )
+        )
         await uow.commit()
-    return TeamCreatedDTO(team_id=team.id, public_code=team.public_code)
+    return TeamCreatedDTO(**team.model_dump(mode="json"))

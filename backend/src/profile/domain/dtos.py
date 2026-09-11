@@ -36,13 +36,12 @@ class TeamCreateDTO(CustomModel):
 
 
 class TeamCreatedDTO(CustomModel):
-    team_id: int
+    id: int
     public_code: str
 
 
 class TeamMemberDTO(CustomModel):
     user_id: int
-    email: str
     full_name: str
     group: str
     telegram: str
