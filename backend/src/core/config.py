@@ -1,7 +1,7 @@
 import os
 from typing import Literal
 
-from pydantic import AnyHttpUrl, AnyUrl, ConfigDict, PostgresDsn, field_validator
+from pydantic import AnyUrl, ConfigDict, PostgresDsn, field_validator
 from pydantic_core.core_schema import ValidationInfo
 from pydantic_settings import BaseSettings
 
@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DOMAIN: str = os.environ.get("DOMAIN")
     SECRET_KEY: str = os.environ.get("SECRET_KEY")
+    BACKEND_CORS_ORIGINS: str | None = os.environ.get("BACKEND_CORS_ORIGINS")
+
+    @property
+    def backend_cors_origins(self) -> list[str]:
+        if self.BACKEND_CORS_ORIGINS:
+            return [s.strip() for s in self.BACKEND_CORS_ORIGINS.split(",")]
+        return []
 
     DB_TYPE: Literal["POSTGRESQL", "ASYNC_POSTGRESQL"] = "POSTGRESQL"
     DB_NAME: str = os.environ.get("DB_NAME")

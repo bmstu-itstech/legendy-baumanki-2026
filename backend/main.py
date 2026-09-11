@@ -1,10 +1,9 @@
 import logging
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqladmin import Admin
-from src.auth.presentation.admin import AdminAuth, UserAdmin
+from src.auth.presentation.admin import UserAdmin
 from src.auth.presentation.api import auth_api_router
 from src.auth.presentation.middlewares import (
     AuthenticationMiddleware,
@@ -37,29 +36,16 @@ async def app_exception_handler(_: Request, exc: AppException):
     )
 
 
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-    )
 app.add_middleware(SecurityMiddleware)
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(JWTRefreshMiddleware)
-# Добавлена последней, чтобы стать самой внешней middleware и
-# обрабатывать CORS-preflight (OPTIONS) раньше остальных.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    # Фронтенд читает access-токен из заголовка ответа Authorization
-    # (см. frontend/lib/api/client.ts) — без явного expose_headers браузер
-    # скрывает этот заголовок от JS, даже если сервер его прислал.
-    expose_headers=["Authorization"],
-)
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.backend_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+    )
 
 app.include_router(auth_api_router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(
@@ -69,9 +55,7 @@ app.include_router(
     teams_api_router, prefix=f"{settings.API_V1_STR}/teams", tags=["teams"]
 )
 
-admin = Admin(
-    app, engine, authentication_backend=AdminAuth(secret_key=settings.SECRET_KEY)
-)
+admin = Admin(app, engine)
 admin.add_view(UserAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(TeamAdmin)
