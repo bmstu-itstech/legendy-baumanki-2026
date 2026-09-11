@@ -15,6 +15,7 @@ from src.core.domain.exceptions.exceptions import AppException
 from src.db.engine import engine
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
 from src.profile.presentation.api import profiles_api_router, teams_api_router
+from starlette.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +31,24 @@ async def app_exception_handler(_: Request, exc: AppException):
     )
 
 
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.BACKEND_CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+    )
 app.add_middleware(SecurityMiddleware)
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(JWTRefreshMiddleware)
 
-app.include_router(auth_api_router, prefix=f"{settings.API_V1_STR}/auth")
-app.include_router(profiles_api_router, prefix=f"{settings.API_V1_STR}/profiles")
-app.include_router(teams_api_router, prefix=f"{settings.API_V1_STR}/teams")
+app.include_router(auth_api_router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(
+    profiles_api_router, prefix=f"{settings.API_V1_STR}/profiles", tags=["profiles"]
+)
+app.include_router(
+    teams_api_router, prefix=f"{settings.API_V1_STR}/teams", tags=["teams"]
+)
 
 admin = Admin(app, engine)
 admin.add_view(UserAdmin)

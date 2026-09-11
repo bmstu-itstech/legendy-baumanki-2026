@@ -72,7 +72,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     ):
         super().__init__(app)
         self.secure_paths = secure_paths or ["/admin", "/docs", "/redoc"]
-        self.allowed_paths = allowed_paths or ["/api/v1"]
+        self.allowed_paths = allowed_paths or ["/api/v1", "/docs", "/redoc"]
 
     async def dispatch(self, request: Request, call_next):
         request_path = str(request.url)
