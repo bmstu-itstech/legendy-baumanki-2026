@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
+import { UtmCapture } from "@/components/layout/utm-capture";
 
 export const metadata: Metadata = {
   title: "Легенды Бауманки 2026 — МГТУ им. Н.Э. Баумана",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ru" className="h-full antialiased">
       <body className="flex min-h-full flex-col overflow-x-hidden">
         <AuthHydrator />
+        <UtmCapture />
         {children}
       </body>
     </html>

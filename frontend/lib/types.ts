@@ -14,7 +14,7 @@ export type LoginPayload = {
 export type RegisterPayload = {
   email: string;
   password: string;
-  /** Берутся из query-параметров ссылки регистрации, используются только при регистрации. */
+  /** Берутся из localStorage (см. lib/utm.ts), куда попадают из query-параметров при первом заходе на сайт. */
   utmSource?: string | null;
   utmCampaign?: string | null;
 };

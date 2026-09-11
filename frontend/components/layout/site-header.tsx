@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { NAV_ITEMS, REGISTRATION_URL } from "@/components/site-data";
@@ -60,12 +61,12 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <a
+        <Link
           href={REGISTRATION_URL}
           className="ml-8 hidden h-11 items-center justify-center rounded-chip border-2 border-white px-4 text-caption transition-colors hover:bg-white hover:text-ink xl:inline-flex xl:w-[168px]"
         >
           Зарегистрироваться
-        </a>
+        </Link>
 
         <button
           type="button"
@@ -112,13 +113,13 @@ export function SiteHeader() {
               </a>
             ))}
           </nav>
-          <a
+          <Link
             href={REGISTRATION_URL}
             onClick={() => setMenuOpen(false)}
             className="mt-6 flex h-12 items-center justify-center rounded-chip border-2 border-white text-title"
           >
             Зарегистрироваться
-          </a>
+          </Link>
         </div>
       )}
     </header>

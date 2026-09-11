@@ -1,10 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useProfileStore } from "@/lib/store/profile-store";
+import { getStoredUtmParams } from "@/lib/utm";
+import {
+  FULL_NAME_PATTERN,
+  FULL_NAME_TITLE,
+  GROUP_INVALID_MESSAGE,
+  GROUP_PATTERN,
+  GROUP_TITLE,
+  TELEGRAM_PATTERN,
+  TELEGRAM_TITLE,
+} from "@/lib/validation";
 
 import {
   ArrowSubmitIcon,
@@ -19,6 +30,8 @@ import {
 } from "@/components/ui/form-fields";
 
 const iconClass = "h-6 w-auto shrink-0 text-ink sm:h-[28px] xl:h-[30px]";
+const telegramAtClass =
+  "shrink-0 text-[1rem] font-medium text-ink sm:text-[1.125rem] xl:text-[1.375rem]";
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -39,11 +52,11 @@ export function RegistrationForm() {
 
     // Ссылка-приглашение вида /registration?team_code=XXXXXX — при таком
     // заходе профиль создаётся сразу с team_code, бэкенд сам присоединяет
-    // к команде. utm_* читаются и используются только здесь, при регистрации.
+    // к команде. utm_* же могли быть пойманы ещё на входе на сайт (см.
+    // components/layout/utm-capture.tsx) и лежат в localStorage.
     const searchParams = new URLSearchParams(window.location.search);
     const teamCode = searchParams.get("team_code");
-    const utmSource = searchParams.get("utm_source");
-    const utmCampaign = searchParams.get("utm_campaign");
+    const { utmSource, utmCampaign } = getStoredUtmParams();
 
     setFormError(null);
     setSubmitting(true);
@@ -87,6 +100,10 @@ export function RegistrationForm() {
             aria-label="ФИО"
             placeholder="ФИО"
             required
+            pattern={FULL_NAME_PATTERN}
+            title={FULL_NAME_TITLE}
+            minLength={2}
+            maxLength={128}
             className={inputClass}
             style={{ paddingLeft: 12 }}
           />
@@ -101,6 +118,10 @@ export function RegistrationForm() {
             aria-label="Учебная группа"
             placeholder="Учебная группа"
             required
+            pattern={GROUP_PATTERN}
+            title={GROUP_TITLE}
+            onInvalid={(event) => event.currentTarget.setCustomValidity(GROUP_INVALID_MESSAGE)}
+            onChange={(event) => event.currentTarget.setCustomValidity("")}
             className={inputClass}
             style={{ paddingLeft: 2 }}
           />
@@ -121,16 +142,32 @@ export function RegistrationForm() {
 
         <Field>
           <TelegramIcon className={iconClass} />
-          <input
-            name="telegram"
-            type="text"
-            autoComplete="off"
-            aria-label="Телеграм"
-            placeholder="Телеграм"
-            required
-            className={inputClass}
-            style={{ paddingLeft: 10 }}
-          />
+          <div className="flex h-full min-w-0 flex-1 items-center">
+            <span aria-hidden="true" className={telegramAtClass}>
+              @
+            </span>
+            <input
+              name="telegram"
+              type="text"
+              autoComplete="off"
+              aria-label="Телеграм"
+              placeholder="username"
+              required
+              pattern={TELEGRAM_PATTERN}
+              title={TELEGRAM_TITLE}
+              minLength={2}
+              maxLength={32}
+              // "@" — фиксированный префикс поля, не часть значения: чтобы
+              // пользователь не писал его сам, а вставка из буфера с "@" не
+              // задваивала символ, просто вырезаем все "@" из значения.
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                const cleaned = value.replace(/@/g, "");
+                if (cleaned !== value) event.currentTarget.value = cleaned;
+              }}
+              className={inputClass}
+            />
+          </div>
         </Field>
 
         <Field>
@@ -179,9 +216,9 @@ export function RegistrationForm() {
 
       <p className="mt-3 text-[1rem] text-ink sm:text-[1.125rem]">
         Уже есть аккаунт?{" "}
-        <a href="/login" className="text-ink">
+        <Link href="/login" className="text-ink underline underline-offset-2">
           Войти
-        </a>
+        </Link>
       </p>
     </form>
   );

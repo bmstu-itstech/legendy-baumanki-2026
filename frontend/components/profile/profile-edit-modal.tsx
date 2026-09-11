@@ -4,6 +4,15 @@ import { useState, type FormEvent } from "react";
 
 import { Field, GroupIcon, MailIcon, TelegramIcon, UserIcon, inputClass } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
+import {
+  FULL_NAME_PATTERN,
+  FULL_NAME_TITLE,
+  GROUP_INVALID_MESSAGE,
+  GROUP_PATTERN,
+  GROUP_TITLE,
+  TELEGRAM_PATTERN,
+  TELEGRAM_TITLE,
+} from "@/lib/validation";
 
 export type ProfileFormData = {
   name: string;
@@ -12,6 +21,7 @@ export type ProfileFormData = {
 };
 
 const iconClass = "h-5 w-auto shrink-0 text-ink sm:h-6";
+const telegramAtClass = "shrink-0 text-[1rem] font-medium text-ink sm:text-[1.125rem]";
 
 export function ProfileEditModal({
   open,
@@ -55,6 +65,10 @@ export function ProfileEditModal({
             aria-label="ФИО"
             placeholder="ФИО"
             required
+            pattern={FULL_NAME_PATTERN}
+            title={FULL_NAME_TITLE}
+            minLength={2}
+            maxLength={128}
             value={draft.name}
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
             className={inputClass}
@@ -70,25 +84,45 @@ export function ProfileEditModal({
             aria-label="Учебная группа"
             placeholder="Учебная группа"
             required
+            pattern={GROUP_PATTERN}
+            title={GROUP_TITLE}
+            onInvalid={(event) => event.currentTarget.setCustomValidity(GROUP_INVALID_MESSAGE)}
             value={draft.group}
-            onChange={(event) => setDraft({ ...draft, group: event.target.value })}
+            onChange={(event) => {
+              event.currentTarget.setCustomValidity("");
+              setDraft({ ...draft, group: event.target.value });
+            }}
             className={inputClass}
           />
         </Field>
 
         <Field>
           <TelegramIcon className={iconClass} />
-          <input
-            name="telegram"
-            type="text"
-            autoComplete="off"
-            aria-label="Телеграм"
-            placeholder="Телеграм"
-            required
-            value={draft.telegram}
-            onChange={(event) => setDraft({ ...draft, telegram: event.target.value })}
-            className={inputClass}
-          />
+          <div className="flex h-full min-w-0 flex-1 items-center">
+            <span aria-hidden="true" className={telegramAtClass}>
+              @
+            </span>
+            <input
+              name="telegram"
+              type="text"
+              autoComplete="off"
+              aria-label="Телеграм"
+              placeholder="username"
+              required
+              pattern={TELEGRAM_PATTERN}
+              title={TELEGRAM_TITLE}
+              minLength={2}
+              maxLength={32}
+              value={draft.telegram}
+              // "@" — фиксированный префикс поля, не часть значения: чтобы
+              // пользователь не писал его сам, а вставка из буфера с "@" не
+              // задваивала символ, просто вырезаем все "@" из значения.
+              onChange={(event) =>
+                setDraft({ ...draft, telegram: event.target.value.replace(/@/g, "") })
+              }
+              className={inputClass}
+            />
+          </div>
         </Field>
 
         <label className="flex flex-col gap-1.5">
