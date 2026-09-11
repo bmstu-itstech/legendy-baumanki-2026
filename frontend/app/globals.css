@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "ALS Sector";
+  src: url("/assets/fonts/ALSSector-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ALS Sector";
+  src: url("/assets/fonts/ALSSector-Regular-supplement.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0401, U+0022, U+2018-201D;
+}
+
+@font-face {
+  font-family: "SA Long Beach";
+  src: url("/assets/fonts/sa-long-beach-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --breakpoint-xxl: 90rem;
+
+  --color-primary: #353972;
+  --color-secondary: #4a4e8c;
+  --color-accent: #3ec9e8;
+  --color-navy: #041234;
+  --color-mist: #e6e6f0;
+  --color-muted: #a9acd1;
+  --color-success: #6fcf97;
+  --color-error: #d96c6c;
+  --color-ink: #08183a;
+  --color-placeholder: #d9d9d9;
+
+  --font-display:
+    "ALS Sector", "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto,
+    Arial, sans-serif;
+  --font-hand:
+    "SA Long Beach", "ALS Sector", "Caveat", "Comic Sans MS", system-ui,
+    sans-serif;
+
+  --text-display: 4rem;
+  --text-display--line-height: 3.75rem;
+  --text-h1: 3rem;
+  --text-h1--line-height: 3.5rem;
+  --text-h2: 2.5rem;
+  --text-h2--line-height: 3rem;
+  --text-h3: 1.625rem;
+  --text-h3--line-height: 2rem;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.75rem;
+  --text-body: 1.25rem;
+  --text-body--line-height: 1.75rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.375rem;
+  --text-micro: 0.5rem;
+  --text-micro--line-height: 0.625rem;
+
+  --radius-chip: 7px;
+  --radius-tile: 12px;
+  --radius-pill: 27.5px;
+  --radius-cta: 30px;
+  --radius-card: 35px;
+  --radius-section: 80px;
+}
+
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+  padding-inline: 1rem;
+
+  @media (width >= 48rem) {
+    padding-inline: 2rem;
+  }
+
+  @media (width >= 80rem) {
+    padding-inline: 59px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background-color: var(--color-mist);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/*
+  Мобильная (до md) вёрстка регистрации рассчитана на вьюпорт 824px
+  высотой (как в макете): контент ~693px + декор 159px внизу. На более
+  низких экранах контент пропорционально ужимается через zoom, чтобы
+  кнопка и строка «Уже есть аккаунт?» не наезжали на декор. Правила
+  идут от высоких экранов к низким: срабатывает последнее совпавшее.
+*/
+@media (max-width: 48rem) {
+  .reg-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 820px) {
+    .reg-adaptive {
+      zoom: 0.94;
+    }
+  }
+  @media (max-height: 760px) {
+    .reg-adaptive {
+      zoom: 0.87;
+    }
+  }
+  @media (max-height: 700px) {
+    .reg-adaptive {
+      zoom: 0.82;
+    }
+  }
+  @media (max-height: 660px) {
+    .reg-adaptive {
+      zoom: 0.76;
+    }
+  }
+  @media (max-height: 620px) {
+    .reg-adaptive {
+      zoom: 0.7;
+    }
+  }
+  @media (max-height: 560px) {
+    .reg-adaptive {
+      zoom: 0.62;
+    }
+  }
+}
+
+/*
+  Страница входа короче регистрации (~530px контента), поэтому её хватает
+  меньшего запаса: ужимается только на очень низких экранах.
+*/
+@media (max-width: 48rem) {
+  .login-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 640px) {
+    .login-adaptive {
+      zoom: 0.9;
+    }
+  }
+  @media (max-height: 560px) {
+    .login-adaptive {
+      zoom: 0.8;
+    }
+  }
+}
+
+/*
+  Заголовок хиро (lg: text-[7.5rem] + кнопка lg:h-[125px]) рассчитан на
+  высокие мониторы. На широких, но невысоких ноутбучных экранах вроде
+  1366×768 он не помещается в h-[calc(100svh-5rem)] и обрезается
+  overflow-hidden секции — сжимаем через zoom, начиная с lg (64rem),
+  по мере уменьшения высоты.
+*/
+@media (min-width: 64rem) {
+  .hero-adaptive {
+    zoom: 1;
+  }
+  @media (max-height: 860px) {
+    .hero-adaptive {
+      zoom: 0.9;
+    }
+  }
+  @media (max-height: 800px) {
+    .hero-adaptive {
+      zoom: 0.82;
+    }
+  }
+  @media (max-height: 740px) {
+    .hero-adaptive {
+      zoom: 0.74;
+    }
+  }
+  @media (max-height: 680px) {
+    .hero-adaptive {
+      zoom: 0.66;
+    }
+  }
+}
