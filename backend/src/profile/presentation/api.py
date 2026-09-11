@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from src.auth.presentation.dependencies import TokenAuthDep
+from src.auth.presentation.permissions import access_control
 from src.profile.domain.dtos import (
     ProfileCreateDTO,
     ProfileReadDTO,
@@ -58,6 +59,7 @@ async def api_update_profile(
 
 
 @teams_api_router.post("")
+@access_control(opened=True)
 async def api_create_team(
     team_data: TeamCreateDTO,
     auth: TokenAuthDep,

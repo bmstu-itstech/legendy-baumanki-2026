@@ -8,6 +8,7 @@ from src.auth.presentation.api import auth_api_router
 from src.auth.presentation.middlewares import (
     AuthenticationMiddleware,
     JWTRefreshMiddleware,
+    SecurityMiddleware,
 )
 from src.core.config import settings
 from src.core.domain.exceptions.exceptions import AppException
@@ -29,7 +30,7 @@ async def app_exception_handler(_: Request, exc: AppException):
     )
 
 
-# app.add_middleware(SecurityMiddleware)
+app.add_middleware(SecurityMiddleware)
 app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(JWTRefreshMiddleware)
 

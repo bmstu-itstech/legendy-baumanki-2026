@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased, selectinload
 from src.profile.domain.entities import (
     Profile,
     ProfileCreate,
@@ -78,6 +79,7 @@ class PGTeamRepository(ITeamRepository):
         obj = TeamModel(**team_data.model_dump(mode="json"))
         self.session.add(obj)
         await self.session.flush()
+        await self.session.refresh(obj, attribute_names=["members"])
         return self._to_domain(obj)
 
     async def get_team_by_id(self, team_id: int) -> Team:
@@ -97,10 +99,13 @@ class PGTeamRepository(ITeamRepository):
         return self._to_domain(obj)
 
     async def get_profile_team_or_none(self, member_id: int) -> TeamWithMembers | None:
+        Member = aliased(ProfileModel)
         stmt = (
             select(TeamModel)
-            .join(ProfileModel, ProfileModel.team_id == TeamModel.id)
-            .where(ProfileModel.user_id == member_id)
+            .join(Member, Member.team_id == TeamModel.id)
+            .join(ProfileModel, ProfileModel.user_id == TeamModel.leader_id)
+            .where(Member.user_id == member_id)
+            .options(selectinload(TeamModel.members))
         )
         results = await self.session.execute(stmt)
         obj: TeamModel | None = results.scalar_one_or_none()

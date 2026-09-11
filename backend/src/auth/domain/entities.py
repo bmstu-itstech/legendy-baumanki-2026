@@ -63,3 +63,8 @@ class UserCreate(CustomModel):
 class AuthenticatedUser(CustomModel):
     id: int
     is_superuser: bool
+
+
+class AnonymousUser(CustomModel):
+    id: None = None
+    is_superuser: bool = False

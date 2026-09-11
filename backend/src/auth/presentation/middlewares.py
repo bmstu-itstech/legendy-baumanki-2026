@@ -1,4 +1,4 @@
-from src.auth.domain.entities import TokenType
+from src.auth.domain.entities import AnonymousUser, TokenType
 from src.auth.domain.exceptions import RefreshTokenNotValid
 from src.auth.infra.db.uow import PGUserUnitOfWork
 from src.auth.presentation.dependencies import get_token_auth
@@ -49,7 +49,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         jwt_auth = await get_token_auth(request=request)
         token_data = await jwt_auth.read_token(TokenType.ACCESS)
         if not token_data:
-            request.state.user = None
+            request.state.user = AnonymousUser()
         else:
             async with PGUserUnitOfWork() as uow:
                 user = await uow.users.get_by_id(token_data.uid)
@@ -71,8 +71,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         self, app, secure_paths: list | None = None, allowed_paths: list | None = None
     ):
         super().__init__(app)
-        self.secure_paths = secure_paths or ["/api", "/admin", "/docs", "/redoc"]
-        self.allowed_paths = allowed_paths or ["/api/auth", "/api/profile"]
+        self.secure_paths = secure_paths or ["/admin", "/docs", "/redoc"]
+        self.allowed_paths = allowed_paths or ["/api/v1"]
 
     async def dispatch(self, request: Request, call_next):
         request_path = str(request.url)

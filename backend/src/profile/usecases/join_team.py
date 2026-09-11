@@ -1,4 +1,4 @@
-from src.profile.domain.entities import TeamUpdate
+from src.profile.domain.entities import ProfileUpdate, TeamUpdate
 from src.profile.domain.exception import UserAlreadyInTeam
 from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 
@@ -17,6 +17,12 @@ async def join_team(
         await uow.teams.update_team(
             TeamUpdate(
                 **team.model_dump(mode="json"),
+            )
+        )
+        await uow.profiles.update(
+            ProfileUpdate(
+                user_id=profile.user_id,
+                team_id=team.id,
             )
         )
         await uow.commit()
