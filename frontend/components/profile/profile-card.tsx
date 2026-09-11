@@ -81,14 +81,14 @@ export function ProfileCard() {
                 index !== 0 ? "border-t border-ink/15" : ""
               }`}
             >
-              <Icon className="h-5 w-auto shrink-0 text-ink" />
+              <Icon className="h-6 w-auto shrink-0 text-ink" />
               <span
-                className="text-[0.8125rem] text-ink/70"
+                className="text-[0.9375rem] text-ink/70"
                 style={{ paddingLeft: labelPaddingLeft }}
               >
                 {label}
               </span>
-              <span className="ml-auto truncate text-[0.8125rem] font-medium text-ink">
+              <span className="ml-auto truncate text-[1rem] font-bold text-ink sm:text-[1.0625rem]">
                 {value}
               </span>
             </div>

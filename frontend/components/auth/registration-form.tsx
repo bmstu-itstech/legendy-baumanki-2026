@@ -1,10 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useProfileStore } from "@/lib/store/profile-store";
+import { getStoredUtmParams } from "@/lib/utm";
+import {
+  FULL_NAME_PATTERN,
+  FULL_NAME_TITLE,
+  GROUP_INVALID_MESSAGE,
+  GROUP_PATTERN,
+  GROUP_TITLE,
+  TELEGRAM_PATTERN,
+  TELEGRAM_TITLE,
+} from "@/lib/validation";
 
 import {
   ArrowSubmitIcon,
@@ -39,11 +50,11 @@ export function RegistrationForm() {
 
     // Ссылка-приглашение вида /registration?team_code=XXXXXX — при таком
     // заходе профиль создаётся сразу с team_code, бэкенд сам присоединяет
-    // к команде. utm_* читаются и используются только здесь, при регистрации.
+    // к команде. utm_* же могли быть пойманы ещё на входе на сайт (см.
+    // components/layout/utm-capture.tsx) и лежат в localStorage.
     const searchParams = new URLSearchParams(window.location.search);
     const teamCode = searchParams.get("team_code");
-    const utmSource = searchParams.get("utm_source");
-    const utmCampaign = searchParams.get("utm_campaign");
+    const { utmSource, utmCampaign } = getStoredUtmParams();
 
     setFormError(null);
     setSubmitting(true);
@@ -87,6 +98,10 @@ export function RegistrationForm() {
             aria-label="ФИО"
             placeholder="ФИО"
             required
+            pattern={FULL_NAME_PATTERN}
+            title={FULL_NAME_TITLE}
+            minLength={2}
+            maxLength={128}
             className={inputClass}
             style={{ paddingLeft: 12 }}
           />
@@ -101,6 +116,10 @@ export function RegistrationForm() {
             aria-label="Учебная группа"
             placeholder="Учебная группа"
             required
+            pattern={GROUP_PATTERN}
+            title={GROUP_TITLE}
+            onInvalid={(event) => event.currentTarget.setCustomValidity(GROUP_INVALID_MESSAGE)}
+            onChange={(event) => event.currentTarget.setCustomValidity("")}
             className={inputClass}
             style={{ paddingLeft: 2 }}
           />
@@ -128,6 +147,18 @@ export function RegistrationForm() {
             aria-label="Телеграм"
             placeholder="Телеграм"
             required
+            pattern={TELEGRAM_PATTERN}
+            title={TELEGRAM_TITLE}
+            minLength={2}
+            maxLength={32}
+            // Юзернейм можно вводить с "@" или без — бэкенд хранит без него,
+            // так что просто вырезаем "@", если человек его напечатал или
+            // вставил из буфера.
+            onChange={(event) => {
+              const { value } = event.currentTarget;
+              const cleaned = value.replace(/@/g, "");
+              if (cleaned !== value) event.currentTarget.value = cleaned;
+            }}
             className={inputClass}
             style={{ paddingLeft: 10 }}
           />
@@ -179,9 +210,9 @@ export function RegistrationForm() {
 
       <p className="mt-3 text-[1rem] text-ink sm:text-[1.125rem]">
         Уже есть аккаунт?{" "}
-        <a href="/login" className="text-ink">
+        <Link href="/login" className="text-ink underline underline-offset-2">
           Войти
-        </a>
+        </Link>
       </p>
     </form>
   );

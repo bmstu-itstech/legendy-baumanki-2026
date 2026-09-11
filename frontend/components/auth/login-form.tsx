@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -106,9 +107,9 @@ export function LoginForm() {
 
       <p className="mt-3 text-[1rem] text-ink sm:text-[1.125rem]">
         Нет аккаунта?{" "}
-        <a href="/registration" className="text-ink">
+        <Link href="/registration" className="text-ink underline underline-offset-2">
           Зарегистрироваться
-        </a>
+        </Link>
       </p>
     </form>
   );

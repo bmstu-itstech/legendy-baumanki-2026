@@ -48,7 +48,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className={`relative w-full max-w-[420px] rounded-[28px] border-2 border-secondary bg-mist p-6 shadow-xl sm:p-8 ${className}`}
+        className={`relative w-full max-w-[480px] rounded-[28px] border-2 border-secondary bg-mist p-6 shadow-xl sm:p-8 ${className}`}
       >
         <button
           type="button"

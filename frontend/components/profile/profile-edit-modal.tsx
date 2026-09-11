@@ -4,6 +4,15 @@ import { useState, type FormEvent } from "react";
 
 import { Field, GroupIcon, MailIcon, TelegramIcon, UserIcon, inputClass } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/modal";
+import {
+  FULL_NAME_PATTERN,
+  FULL_NAME_TITLE,
+  GROUP_INVALID_MESSAGE,
+  GROUP_PATTERN,
+  GROUP_TITLE,
+  TELEGRAM_PATTERN,
+  TELEGRAM_TITLE,
+} from "@/lib/validation";
 
 export type ProfileFormData = {
   name: string;
@@ -55,6 +64,10 @@ export function ProfileEditModal({
             aria-label="ФИО"
             placeholder="ФИО"
             required
+            pattern={FULL_NAME_PATTERN}
+            title={FULL_NAME_TITLE}
+            minLength={2}
+            maxLength={128}
             value={draft.name}
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
             className={inputClass}
@@ -70,8 +83,14 @@ export function ProfileEditModal({
             aria-label="Учебная группа"
             placeholder="Учебная группа"
             required
+            pattern={GROUP_PATTERN}
+            title={GROUP_TITLE}
+            onInvalid={(event) => event.currentTarget.setCustomValidity(GROUP_INVALID_MESSAGE)}
             value={draft.group}
-            onChange={(event) => setDraft({ ...draft, group: event.target.value })}
+            onChange={(event) => {
+              event.currentTarget.setCustomValidity("");
+              setDraft({ ...draft, group: event.target.value });
+            }}
             className={inputClass}
           />
         </Field>
@@ -85,8 +104,17 @@ export function ProfileEditModal({
             aria-label="Телеграм"
             placeholder="Телеграм"
             required
+            pattern={TELEGRAM_PATTERN}
+            title={TELEGRAM_TITLE}
+            minLength={2}
+            maxLength={32}
             value={draft.telegram}
-            onChange={(event) => setDraft({ ...draft, telegram: event.target.value })}
+            // Юзернейм можно вводить с "@" или без — бэкенд хранит без него,
+            // так что просто вырезаем "@", если человек его напечатал или
+            // вставил из буфера.
+            onChange={(event) =>
+              setDraft({ ...draft, telegram: event.target.value.replace(/@/g, "") })
+            }
             className={inputClass}
           />
         </Field>

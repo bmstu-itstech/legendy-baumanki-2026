@@ -62,7 +62,8 @@ export const useTeamStore = create<TeamState & TeamActions>((set) => ({
 
   join: async (teamCode) => {
     try {
-      const team = await teamApi.join(teamCode);
+      await teamApi.join(teamCode);
+      const team = await teamApi.getMine();
       set({ team, status: "loaded", error: null });
     } catch (err) {
       throw new Error(toErrorMessage(err));

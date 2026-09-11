@@ -8,6 +8,13 @@ from src.db.base import BaseModel
 class TeamModel(BaseModel):
     __tablename__ = "teams"
 
+    # eager_defaults — без этого после UPDATE (rename) созданный на стороне
+    # Postgres updated_at (onupdate=func.now()) считается "устаревшим", а
+    # неявная ленивая перезагрузка колонки в AsyncSession падает с
+    # MissingGreenlet. С eager_defaults SQLAlchemy сразу добавляет RETURNING
+    # к самому UPDATE/INSERT, без отдельного похода в БД.
+    __mapper_args__ = {"eager_defaults": True}
+
     id: Mapped[int] = mapped_column(primary_key=True)
 
     public_code: Mapped[str] = mapped_column(
