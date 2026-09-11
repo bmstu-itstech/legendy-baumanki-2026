@@ -17,7 +17,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           BACKEND_PORT: ${{ vars.BACKEND_PORT }}
-          FRONTEND_PORT: ${{ vars.FRONTED_PORT }}
+          FRONTEND_PORT: ${{ vars.FRONTEND_PORT }}
           DOMAIN: ${{ vars.DOMAIN }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
