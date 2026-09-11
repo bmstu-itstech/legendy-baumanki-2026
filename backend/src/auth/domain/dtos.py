@@ -1,4 +1,4 @@
-from pydantic import SecretStr, EmailStr
+from pydantic import EmailStr, SecretStr
 from src.core.domain.entities import CustomModel
 
 
