@@ -43,7 +43,7 @@ function CreateOrJoinTeam() {
         Моя команда
       </h2>
 
-      <p className="mt-3 text-[0.8125rem] text-ink/70">
+      <p className="mt-3 text-[0.9375rem] text-ink/70">
         У вас пока нет команды — создайте свою или вступите по коду.
       </p>
 

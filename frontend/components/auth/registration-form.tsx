@@ -30,8 +30,6 @@ import {
 } from "@/components/ui/form-fields";
 
 const iconClass = "h-6 w-auto shrink-0 text-ink sm:h-[28px] xl:h-[30px]";
-const telegramAtClass =
-  "shrink-0 text-[1rem] font-medium text-ink sm:text-[1.125rem] xl:text-[1.375rem]";
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -142,32 +140,28 @@ export function RegistrationForm() {
 
         <Field>
           <TelegramIcon className={iconClass} />
-          <div className="flex h-full min-w-0 flex-1 items-center">
-            <span aria-hidden="true" className={telegramAtClass}>
-              @
-            </span>
-            <input
-              name="telegram"
-              type="text"
-              autoComplete="off"
-              aria-label="Телеграм"
-              placeholder="username"
-              required
-              pattern={TELEGRAM_PATTERN}
-              title={TELEGRAM_TITLE}
-              minLength={2}
-              maxLength={32}
-              // "@" — фиксированный префикс поля, не часть значения: чтобы
-              // пользователь не писал его сам, а вставка из буфера с "@" не
-              // задваивала символ, просто вырезаем все "@" из значения.
-              onChange={(event) => {
-                const { value } = event.currentTarget;
-                const cleaned = value.replace(/@/g, "");
-                if (cleaned !== value) event.currentTarget.value = cleaned;
-              }}
-              className={inputClass}
-            />
-          </div>
+          <input
+            name="telegram"
+            type="text"
+            autoComplete="off"
+            aria-label="Телеграм"
+            placeholder="Телеграм"
+            required
+            pattern={TELEGRAM_PATTERN}
+            title={TELEGRAM_TITLE}
+            minLength={2}
+            maxLength={32}
+            // Юзернейм можно вводить с "@" или без — бэкенд хранит без него,
+            // так что просто вырезаем "@", если человек его напечатал или
+            // вставил из буфера.
+            onChange={(event) => {
+              const { value } = event.currentTarget;
+              const cleaned = value.replace(/@/g, "");
+              if (cleaned !== value) event.currentTarget.value = cleaned;
+            }}
+            className={inputClass}
+            style={{ paddingLeft: 10 }}
+          />
         </Field>
 
         <Field>

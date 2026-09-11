@@ -61,14 +61,16 @@ export const teamApi = {
   // исключительно через join/leave отдельных участников.
   rename: (payload: UpdateTeamPayload) =>
     apiFetch<TeamWithMembersDto>("/teams", {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(payload),
     }).then(teamFromDto),
 
+  // Ручка join ничего не возвращает (см. backend join_team) — свежие
+  // данные команды подтягиваем отдельным getMine() после успешного join.
   join: (teamCode: string) =>
-    apiFetch<TeamWithMembersDto>(`/teams/${encodeURIComponent(teamCode)}/join`, {
+    apiFetch<void>(`/teams/${encodeURIComponent(teamCode)}/join`, {
       method: "POST",
-    }).then(teamFromDto),
+    }),
 
   leave: () => apiFetch<void>("/teams/leave", { method: "POST" }),
 };

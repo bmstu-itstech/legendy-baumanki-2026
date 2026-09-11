@@ -21,7 +21,6 @@ export type ProfileFormData = {
 };
 
 const iconClass = "h-5 w-auto shrink-0 text-ink sm:h-6";
-const telegramAtClass = "shrink-0 text-[1rem] font-medium text-ink sm:text-[1.125rem]";
 
 export function ProfileEditModal({
   open,
@@ -98,31 +97,26 @@ export function ProfileEditModal({
 
         <Field>
           <TelegramIcon className={iconClass} />
-          <div className="flex h-full min-w-0 flex-1 items-center">
-            <span aria-hidden="true" className={telegramAtClass}>
-              @
-            </span>
-            <input
-              name="telegram"
-              type="text"
-              autoComplete="off"
-              aria-label="Телеграм"
-              placeholder="username"
-              required
-              pattern={TELEGRAM_PATTERN}
-              title={TELEGRAM_TITLE}
-              minLength={2}
-              maxLength={32}
-              value={draft.telegram}
-              // "@" — фиксированный префикс поля, не часть значения: чтобы
-              // пользователь не писал его сам, а вставка из буфера с "@" не
-              // задваивала символ, просто вырезаем все "@" из значения.
-              onChange={(event) =>
-                setDraft({ ...draft, telegram: event.target.value.replace(/@/g, "") })
-              }
-              className={inputClass}
-            />
-          </div>
+          <input
+            name="telegram"
+            type="text"
+            autoComplete="off"
+            aria-label="Телеграм"
+            placeholder="Телеграм"
+            required
+            pattern={TELEGRAM_PATTERN}
+            title={TELEGRAM_TITLE}
+            minLength={2}
+            maxLength={32}
+            value={draft.telegram}
+            // Юзернейм можно вводить с "@" или без — бэкенд хранит без него,
+            // так что просто вырезаем "@", если человек его напечатал или
+            // вставил из буфера.
+            onChange={(event) =>
+              setDraft({ ...draft, telegram: event.target.value.replace(/@/g, "") })
+            }
+            className={inputClass}
+          />
         </Field>
 
         <label className="flex flex-col gap-1.5">
