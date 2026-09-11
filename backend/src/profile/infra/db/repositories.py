@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, selectinload
@@ -83,7 +83,11 @@ class PGTeamRepository(ITeamRepository):
         return self._to_domain(obj)
 
     async def get_team_by_id(self, team_id: int) -> Team:
-        stmt = select(TeamModel).where(TeamModel.id == team_id)
+        stmt = (
+            select(TeamModel)
+            .where(TeamModel.id == team_id)
+            .options(selectinload(TeamModel.members))
+        )
         results = await self.session.execute(stmt)
         obj: TeamModel | None = results.scalar_one_or_none()
         if not obj:
@@ -91,7 +95,11 @@ class PGTeamRepository(ITeamRepository):
         return self._to_domain(obj)
 
     async def get_team_by_code(self, code: str) -> Team:
-        stmt = select(TeamModel).where(TeamModel.public_code == code)
+        stmt = (
+            select(TeamModel)
+            .where(TeamModel.public_code == code)
+            .options(selectinload(TeamModel.members))
+        )
         results = await self.session.execute(stmt)
         obj: TeamModel | None = results.scalar_one_or_none()
         if not obj:
@@ -114,7 +122,11 @@ class PGTeamRepository(ITeamRepository):
         return self._to_domain_with_members(obj)
 
     async def update_team(self, team_data: TeamUpdate) -> Team:
-        stmt = select(TeamModel).where(TeamModel.id == team_data.id)
+        stmt = (
+            select(TeamModel)
+            .where(TeamModel.id == team_data.id)
+            .options(selectinload(TeamModel.members))
+        )
         result = await self.session.execute(stmt)
         obj: TeamModel | None = result.scalar_one_or_none()
         if not obj:
@@ -125,6 +137,10 @@ class PGTeamRepository(ITeamRepository):
             setattr(obj, field, value)
         await self.session.flush()
         return self._to_domain(obj)
+
+    async def delete_team(self, team_id: int) -> None:
+        stmt = delete(TeamModel).where(TeamModel.id == team_id)
+        await self.session.execute(stmt)
 
     @staticmethod
     def _to_domain(obj: TeamModel) -> Team:

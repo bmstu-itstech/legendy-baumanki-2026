@@ -54,6 +54,11 @@ class Team(CustomModel):
     def kick(self, member_id: int):
         if not member_id in self.members:
             raise UserIsNotInTeam()
+        self.members.remove(member_id)
+        if len(self.members) == 0:
+            return
+        if member_id == self.leader_id:
+            self.leader_id = self.members[0]
 
 
 class TeamWithMembers(CustomModel):
@@ -80,5 +85,4 @@ class TeamWithMembers(CustomModel):
 class TeamUpdate(CustomModel):
     id: int
     name: str | None = None
-    members: list[int] | None = None
     leader_id: int | None = None

@@ -89,7 +89,7 @@ async def api_patch_team(
     return await update_team(uid, data, uow)
 
 
-@teams_api_router.post("/{team_code}/join", response_model=TeamWithMembersDTO)
+@teams_api_router.post("/{team_code}/join")
 async def api_join_team(
     team_code: str,
     uow: ProfileUoWDep,
