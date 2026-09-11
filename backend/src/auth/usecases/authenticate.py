@@ -1,5 +1,5 @@
 from src.auth.domain.entities import AuthenticatedUser, User
-from src.auth.domain.exceptions import InvalidCredentials
+from src.auth.domain.exceptions import InvalidCredentials, UserNotFound
 from src.auth.domain.interfaces.token_auth import ITokenAuth
 from src.auth.domain.interfaces.user_uow import IUserUnitOfWork
 from src.core.domain.interfaces.password_hasher import IPasswordHasher
@@ -13,7 +13,10 @@ async def authenticate(
     auth: ITokenAuth,
 ) -> User:
     async with uow:
-        user = await uow.users.get_by_email(email)
+        try:
+            user = await uow.users.get_by_email(email)
+        except UserNotFound:
+            raise InvalidCredentials()
 
         if not pwd_hasher.verify(password, user.passhash):
             raise InvalidCredentials()

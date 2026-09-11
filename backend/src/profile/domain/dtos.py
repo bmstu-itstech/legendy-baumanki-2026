@@ -1,15 +1,29 @@
 from typing import Self
 
+from pydantic import Field
+
 from src.core.domain.entities import CustomModel
 from src.profile.domain.entities import Profile, ProfileUpdate, TeamWithMembers
 
 
+PROFILE_FULL_NAME_REGEX = r"^[А-я ]*$"
+PROFILE_GROUP_REGEX = \
+    (r"^(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР|ЮР.ДК|МК|ИУК)"
+     r"([1-9]\d?)?[КИЦ]?"
+     r"-"
+     r"1([1-9]|(\.1\d))"
+     r"[АМБ]?В?"
+     r"(\/\d)?$")
+PROFILE_TELEGRAM_REGEX = r"^[A-z0-9_]$"
+TEAM_CODE_REGEX = r"^[A-Z1-9]{6}$"
+
+
 class ProfileCreateDTO(CustomModel):
     user_id: int
-    full_name: str
-    group: str
-    telegram: str
-    team_code: str | None = None
+    full_name: str = Field(pattern=PROFILE_FULL_NAME_REGEX, min_length=2, max_length=128)
+    group: str = Field(pattern=PROFILE_GROUP_REGEX)
+    telegram: str = Field(pattern=PROFILE_TELEGRAM_REGEX, min_length=2, max_length=32)
+    team_code: str | None = Field(None, pattern=TEAM_CODE_REGEX)
 
 
 class ProfileReadDTO(CustomModel):
@@ -22,17 +36,16 @@ class ProfileReadDTO(CustomModel):
 
 
 class ProfileUpdateDTO(CustomModel):
-    user_id: int
-    full_name: str | None = None
-    group: str | None = None
-    telegram: str | None = None
+    full_name: str | None = Field(None, pattern=PROFILE_FULL_NAME_REGEX, min_length=2, max_length=128)
+    group: str | None = Field(None, pattern=PROFILE_GROUP_REGEX)
+    telegram: str | None = Field(None, pattern=TEAM_CODE_REGEX, min_length=2, max_length=32)
 
     def to_domain(self) -> ProfileUpdate:
         return ProfileUpdate(**self.model_dump(mode="json"))
 
 
 class TeamCreateDTO(CustomModel):
-    name: str
+    name: str = Field(min_length=3, max_length=128)
 
 
 class TeamCreatedDTO(CustomModel):
@@ -48,7 +61,7 @@ class TeamMemberDTO(CustomModel):
 
     @classmethod
     def from_profile(cls, profile: Profile, email: str):
-        return TeamMemberDTO(**profile.model_dump(mode="json"), email=email)
+        return TeamMemberDTO(**profile.model_dump(mode="json"))
 
 
 class TeamWithMembersDTO(CustomModel):
@@ -73,4 +86,4 @@ class TeamWithMembersDTO(CustomModel):
 
 
 class TeamUpdateDTO(CustomModel):
-    name: str
+    name: str = Field(min_length=3, max_length=128)

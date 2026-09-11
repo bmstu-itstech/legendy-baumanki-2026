@@ -54,8 +54,10 @@ async def api_update_profile(
     profile_data: ProfileUpdateDTO,
     uow: ProfileUoWDep,
     email_provider: EmailProviderDep,
+    auth: TokenAuthDep,
 ) -> ProfileReadDTO:
-    return await update_profile(profile_data, uow, email_provider)
+    uid = auth.request.state.user.id
+    return await update_profile(uid, profile_data, uow, email_provider)
 
 
 @teams_api_router.post("")

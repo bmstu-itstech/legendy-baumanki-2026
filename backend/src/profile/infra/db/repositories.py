@@ -54,6 +54,7 @@ class PGProfileRepository(IProfileRepository):
         obj: ProfileModel | None = result.scalar_one_or_none()
         if not obj:
             raise ProfileNotFound(detail=f"Profile with id {profile.user_id} not found")
+        print(profile.model_dump(exclude_unset=True))
         for field, value in profile.model_dump(mode="json", exclude_unset=True).items():
             setattr(obj, field, value)
         await self.session.flush()
