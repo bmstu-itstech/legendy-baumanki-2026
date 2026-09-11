@@ -13,7 +13,7 @@ PROFILE_GROUP_REGEX = (
     r"[АМБ]?В?"
     r"(\/\d)?$"
 )
-PROFILE_TELEGRAM_REGEX = r"^[A-z0-9_]$"
+PROFILE_TELEGRAM_REGEX = r"^[A-z0-9_]*$"
 TEAM_CODE_REGEX = r"^[A-Z1-9]{6}$"
 
 
