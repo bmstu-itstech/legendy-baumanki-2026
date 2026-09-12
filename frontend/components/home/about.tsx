@@ -35,7 +35,7 @@ export function About() {
 
             <Link
               href={REGISTRATION_URL}
-              className="group clear-right mt-8 inline-flex h-13 w-full max-w-[420px] items-center justify-center gap-3 rounded-cta border-2 border-ink px-5 text-[1rem] font-bold text-ink transition-colors hover:bg-ink hover:text-mist sm:h-16 sm:text-h3 lg:mt-10 lg:h-24 lg:text-[2rem] xl:h-32.5 xl:w-195.5 xl:max-w-none xl:justify-start xl:gap-10 xl:px-5.5 xl:text-[2.75rem]"
+              className="group clear-right mt-8 inline-flex h-13 w-fit items-center gap-3 rounded-cta border-2 border-ink px-5 text-[1rem] font-bold text-ink transition-colors hover:bg-ink hover:text-mist sm:h-16 sm:text-h3 lg:mt-10 lg:h-24 lg:text-[2rem] xl:h-32.5 xl:gap-10 xl:px-5.5 xl:text-[2.75rem]"
             >
               Зарегистрироваться
               <ArrowUpRight className="size-6 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 sm:size-8 lg:size-12 xl:size-16" />
