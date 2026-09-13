@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "0.2.0"
+version = "1.0.0"
 description = "Бэкенд для сайта Легенд Бауманки 2026"
 readme = "README.md"
 requires-python = ">=3.13"

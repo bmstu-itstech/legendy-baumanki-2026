@@ -11,12 +11,10 @@ async def update_profile(
     email_provider: IEmailProvider,
 ) -> ProfileReadDTO:
     async with uow:
-        print(profile_dto.model_dump(exclude_unset=True))
         profile_data = ProfileUpdate(
             user_id=user_id,
             **profile_dto.model_dump(exclude_unset=True),
         )
-        print(profile_data.model_dump(exclude_unset=True))
         profile = await uow.profiles.update(profile_data)
         await uow.commit()
     email = await email_provider.get_user_email(profile.user_id)
