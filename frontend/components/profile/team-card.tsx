@@ -9,6 +9,7 @@ import { useTeamStore } from "@/lib/store/team-store";
 
 import { TeamEditModal } from "./team-edit-modal";
 
+const TEAM_MIN_SIZE = 5;
 const TEAM_CAPACITY = 8;
 
 function CreateOrJoinTeam() {
@@ -38,20 +39,24 @@ function CreateOrJoinTeam() {
   };
 
   return (
-    <div className="flex w-full max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
+    <div className="flex w-full min-w-0 max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
       <h2 className="text-[1.375rem] font-bold uppercase text-ink sm:text-[1.625rem]">
         Моя команда
       </h2>
 
-      <p className="mt-3 text-[0.9375rem] text-ink/70">
+      <p className="mt-3 text-[1rem] text-ink/70">
         У вас пока нет команды — создайте свою или вступите по коду.
+      </p>
+
+      <p className="mt-1 text-[1rem] text-ink/60">
+        Размер команды должен быть от {TEAM_MIN_SIZE} до {TEAM_CAPACITY} человек.
       </p>
 
       <div className="mt-4 flex gap-2">
         <button
           type="button"
           onClick={() => setMode("create")}
-          className={`flex-1 cursor-pointer rounded-[10px] border-2 px-3 py-2 text-[0.8125rem] font-bold uppercase transition-colors ${
+          className={`flex-1 cursor-pointer rounded-[10px] border-2 px-3 py-2 text-[1rem] font-bold uppercase transition-colors ${
             mode === "create" ? "border-ink bg-ink text-white" : "border-ink/20 text-ink"
           }`}
         >
@@ -60,7 +65,7 @@ function CreateOrJoinTeam() {
         <button
           type="button"
           onClick={() => setMode("join")}
-          className={`flex-1 cursor-pointer rounded-[10px] border-2 px-3 py-2 text-[0.8125rem] font-bold uppercase transition-colors ${
+          className={`flex-1 cursor-pointer rounded-[10px] border-2 px-3 py-2 text-[1rem] font-bold uppercase transition-colors ${
             mode === "join" ? "border-ink bg-ink text-white" : "border-ink/20 text-ink"
           }`}
         >
@@ -83,7 +88,7 @@ function CreateOrJoinTeam() {
         </Field>
 
         {error && (
-          <p role="alert" className="text-[0.8125rem] text-error">
+          <p role="alert" className="text-[1rem] text-error">
             {error}
           </p>
         )}
@@ -120,16 +125,16 @@ export function TeamCard() {
 
   if (status === "idle" || status === "loading") {
     return (
-      <div className="flex w-full max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
-        <p className="text-[0.9375rem] text-ink/70">Загружаем команду…</p>
+      <div className="flex w-full min-w-0 max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
+        <p className="text-[1rem] text-ink/70">Загружаем команду…</p>
       </div>
     );
   }
 
   if (status === "error") {
     return (
-      <div className="flex w-full max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
-        <p role="alert" className="text-[0.9375rem] text-error">
+      <div className="flex w-full min-w-0 max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
+        <p role="alert" className="text-[1rem] text-error">
           {error ?? "Не удалось загрузить команду"}
         </p>
       </div>
@@ -169,7 +174,7 @@ export function TeamCard() {
   };
 
   return (
-    <div className="flex w-full max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
+    <div className="flex w-full min-w-0 max-w-[440px] flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9 xl:max-w-[468px]">
       <h2 className="text-[1.375rem] font-bold uppercase text-ink sm:text-[1.625rem]">
         Моя команда
       </h2>
@@ -181,7 +186,7 @@ export function TeamCard() {
         <span className="text-[1.125rem] font-bold text-ink">{team.name}</span>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-[0.8125rem] text-ink">
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-[1rem] text-ink">
         <span>Код команды:</span>
         <span className="inline-flex items-center gap-2 rounded-[7px] border border-ink px-2.5 py-1">
           {team.publicCode}
@@ -195,10 +200,10 @@ export function TeamCard() {
             <CopyIcon className="h-full w-auto" />
           </button>
         </span>
-        {copied && <span className="text-[0.75rem] text-accent">Скопировано!</span>}
+        {copied && <span className="text-[1rem] text-accent">Скопировано!</span>}
       </div>
 
-      <p className="mt-2 text-[0.75rem] text-ink/60">
+      <p className="mt-2 text-[1rem] text-ink/60">
         Поделитесь кодом — новый участник вступает по нему в профиле или по ссылке-приглашению.
       </p>
 
@@ -207,6 +212,16 @@ export function TeamCard() {
       <p className="mt-4 text-[1.125rem] text-ink">
         Состав команды ({team.members.length}/{TEAM_CAPACITY})
       </p>
+
+      <p className="mt-1 text-[1rem] text-ink/60">
+        Размер команды должен быть от {TEAM_MIN_SIZE} до {TEAM_CAPACITY} человек.
+      </p>
+
+      {team.members.length < TEAM_MIN_SIZE && (
+        <p role="alert" className="mt-2 text-[1rem] text-error">
+          Для участия в основном этапе необходимо {TEAM_MIN_SIZE} человек в команде.
+        </p>
+      )}
 
       <div className="mt-3 flex flex-col gap-2.5">
         {team.members.map((member) => {
@@ -221,9 +236,9 @@ export function TeamCard() {
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-mist">
                 <GroupFilledIcon className="h-5 w-auto text-muted" />
               </div>
-              <span className="text-[0.8125rem] text-ink">{member.fullName}</span>
+              <span className="text-[1rem] text-ink">{member.fullName}</span>
               {memberIsCaptain && (
-                <span className="ml-auto shrink-0 rounded-[7px] border border-ink px-2 py-0.5 text-[0.6875rem] font-bold uppercase text-ink">
+                <span className="ml-auto shrink-0 rounded-[7px] border border-ink px-2 py-0.5 text-[1rem] font-bold uppercase text-ink">
                   Капитан
                 </span>
               )}
@@ -233,7 +248,7 @@ export function TeamCard() {
       </div>
 
       {actionError && (
-        <p role="alert" className="mt-3 text-[0.8125rem] text-error">
+        <p role="alert" className="mt-3 text-[1rem] text-error">
           {actionError}
         </p>
       )}
@@ -243,7 +258,7 @@ export function TeamCard() {
           <button
             type="button"
             onClick={() => setEditOpen(true)}
-            className="flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-ink px-3 text-[0.8125rem] text-white transition-transform hover:scale-[1.01]"
+            className="flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-ink px-3 text-[1rem] text-white transition-transform hover:scale-[1.01]"
           >
             <PencilIcon className="size-4 shrink-0" />
             Редактировать команду
@@ -253,7 +268,7 @@ export function TeamCard() {
           type="button"
           onClick={handleLeave}
           disabled={leaving}
-          className="flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-ink px-3 text-[0.8125rem] text-ink transition-colors hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-ink px-3 text-[1rem] text-ink transition-colors hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           <LogoutIcon className="size-4 shrink-0" />
           {leaving ? "Выходим…" : "Выйти из команды"}
