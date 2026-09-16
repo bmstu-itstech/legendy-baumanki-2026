@@ -31,7 +31,7 @@ function ProfilePageContent() {
       <main className="flex min-h-[calc(100svh-2rem)] flex-1 bg-mist xl:min-h-[calc(100svh-2.25rem)]">
         <ProfileSidebar />
 
-        <div className="relative flex-1 pb-28 lg:pb-0">
+        <div className="relative min-w-0 flex-1 pb-28 lg:pb-0">
           <CornerDashStar
             aria-hidden="true"
             className="pointer-events-none absolute top-2 right-4 w-24 text-ink sm:top-4 sm:right-10 sm:w-32 xl:right-16 xl:w-40"

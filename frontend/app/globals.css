@@ -89,6 +89,8 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 7rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink) var(--color-mist);
 }
 
 body {
@@ -96,6 +98,36 @@ body {
   color: var(--color-ink);
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-mist);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-ink);
+  border-radius: 8px;
+}
+
+/*
+  На мобильной вёрстке (< lg) полосы во всю ширину (таймер, хэдер) визуально
+  режутся зарезервированным под скроллбар зазором — на реальном телефоне
+  скролл идёт тачем и системного скроллбара почти не видно, так что здесь
+  прячем его совсем, а не просто утончаем.
+*/
+@media (max-width: 63.9375rem) {
+  html {
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
