@@ -38,7 +38,7 @@ export function ProfileCard() {
   };
 
   const cardShell = (children: React.ReactNode) => (
-    <div className="flex w-full max-w-[440px] flex-col items-center justify-between rounded-[18px] border-2 border-secondary bg-white px-6 pt-9 pb-6 sm:px-9 xl:max-w-[388px]">
+    <div className="flex w-full min-w-0 max-w-[440px] flex-col items-center justify-between rounded-[18px] border-2 border-secondary bg-white px-6 pt-9 pb-6 sm:px-9 xl:max-w-[388px]">
       {children}
     </div>
   );
@@ -63,8 +63,8 @@ export function ProfileCard() {
   ];
 
   return (
-    <div className="flex w-full max-w-[440px] flex-col items-center justify-between rounded-[18px] border-2 border-secondary bg-white px-6 pt-9 pb-6 sm:px-9 xl:max-w-[388px]">
-      <div className="flex w-full flex-col items-center">
+    <div className="flex w-full min-w-0 max-w-[440px] flex-col items-center justify-between rounded-[18px] border-2 border-secondary bg-white px-6 pt-9 pb-6 sm:px-9 xl:max-w-[388px]">
+      <div className="flex w-full min-w-0 flex-col items-center">
         <div className="flex size-[150px] shrink-0 items-center justify-center rounded-full bg-mist sm:size-[198px]">
           <ProfileUserIcon className="size-[76px] text-ink sm:size-[100px]" />
         </div>
@@ -83,12 +83,12 @@ export function ProfileCard() {
             >
               <Icon className="h-6 w-auto shrink-0 text-ink" />
               <span
-                className="text-[0.9375rem] text-ink/70"
+                className="shrink-0 text-[0.9375rem] text-ink/70"
                 style={{ paddingLeft: labelPaddingLeft }}
               >
                 {label}
               </span>
-              <span className="ml-auto truncate text-[1rem] font-bold text-ink sm:text-[1.0625rem]">
+              <span className="ml-auto min-w-0 truncate text-[1rem] font-bold text-ink sm:text-[1.0625rem]">
                 {value}
               </span>
             </div>
