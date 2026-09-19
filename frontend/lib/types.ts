@@ -77,3 +77,82 @@ export type CreatedTeam = {
   teamId: number;
   publicCode: string;
 };
+
+// ---------------------------------------------------------------------------
+// Задания и рейтинг — драфт моделей по ТЗ с доски. Бэкенда и записи в
+// lb26.openapi.json под них пока нет, на фронте временно ездим на моках
+// (см. lib/mocks/tasks.ts). Поля и статусы — предварительные, уточнить при
+// появлении реального API.
+// ---------------------------------------------------------------------------
+
+export type TaskFormat = "offline" | "online";
+
+/**
+ * Статус задания для команды. Переходы (по мокапу с доски):
+ * closed -> opened (авто, когда закрыто предыдущее)
+ * opened -> skipped | started
+ * started -> skipped | moderation (ручная проверка) | completed (авто-проверка)
+ * moderation -> completed | failed
+ */
+export type TaskStatus =
+  | "closed"
+  | "opened"
+  | "started"
+  | "moderation"
+  | "completed"
+  | "skipped"
+  | "failed";
+
+export type TaskCheckType = "auto" | "manual";
+
+export type Module = {
+  id: number;
+  name: string;
+  order: number;
+  sectionsCount: number;
+};
+
+export type TaskSection = {
+  id: number;
+  moduleId: number;
+  order: number;
+  title: string;
+  tasksCount: number;
+};
+
+export type Task = {
+  id: number;
+  sectionId: number;
+  /** Номер задания в кружочке на карте раздела. */
+  index: number;
+  title: string;
+  description: string;
+  imageUrl: string | null;
+  checkType: TaskCheckType;
+  timeLimitSec: number | null;
+  points: number;
+  status: TaskStatus;
+  startedAt: string | null;
+};
+
+export type RatingTaskScore = {
+  taskId: number;
+  points: number;
+  timeSec: number | null;
+};
+
+export type RatingRow = {
+  place: number;
+  teamId: number;
+  teamName: string;
+  tasks: RatingTaskScore[];
+  totalPoints: number;
+  totalTimeSec: number;
+};
+
+/** Один из нескольких рейтингов, между которыми можно переключаться (см. стикер на доске). */
+export type RatingBoard = {
+  id: string;
+  title: string;
+  rows: RatingRow[];
+};

@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 
 import { LogoutIcon, ProfileUserIcon, RatingIcon, TasksIcon } from "@/components/ui/icons";
 
 const PROFILE_NAV_ITEMS = [
-  { label: "Задания", href: "#", Icon: TasksIcon, disabled: true },
-  { label: "Рейтинг", href: "#", Icon: RatingIcon, disabled: true },
+  { label: "Задания", href: "/profile/tasks", Icon: TasksIcon, disabled: false },
+  { label: "Рейтинг", href: "/profile/rating", Icon: RatingIcon, disabled: false },
   { label: "Профиль", href: "/profile", Icon: ProfileUserIcon, disabled: false },
 ] as const;
 
@@ -27,8 +28,15 @@ function useLogout() {
   };
 }
 
+function useActiveNavHref() {
+  const pathname = usePathname();
+
+  return (href: string) => (href === "/profile" ? pathname === "/profile" : pathname.startsWith(href));
+}
+
 export function ProfileSidebar() {
   const handleLogout = useLogout();
+  const isActive = useActiveNavHref();
 
   return (
     <aside className="relative hidden w-[300px] shrink-0 flex-col overflow-hidden bg-ink px-4 pt-8 lg:flex xl:w-[337px] xl:px-[18px]">
@@ -40,7 +48,7 @@ export function ProfileSidebar() {
 
       <nav className="mt-10 flex flex-col gap-3">
         {PROFILE_NAV_ITEMS.map(({ label, href, Icon, disabled }) => {
-          const active = label === "Профиль";
+          const active = isActive(href);
 
           if (disabled) {
             return (
@@ -97,11 +105,12 @@ export function ProfileSidebar() {
 
 export function ProfileBottomNav() {
   const handleLogout = useLogout();
+  const isActive = useActiveNavHref();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[84px] items-center justify-around bg-ink px-2 lg:hidden">
       {PROFILE_NAV_ITEMS.map(({ label, href, Icon, disabled }) => {
-        const active = label === "Профиль";
+        const active = isActive(href);
 
         if (disabled) {
           return (
