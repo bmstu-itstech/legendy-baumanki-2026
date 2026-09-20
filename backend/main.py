@@ -16,6 +16,16 @@ from src.db.engine import engine
 from src.files.presentation.api import files_api_router
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
 from src.profile.presentation.api import profiles_api_router, teams_api_router
+from src.tasks.presentation.admin import (
+    ModuleAdmin,
+    SectionAdmin,
+    StateAdmin,
+    TaskAdmin,
+    TaskAnswerAdmin,
+    TaskMediaAdmin,
+    TaskQuestionAdmin,
+    TeamAnswerAdmin,
+)
 from src.tasks.presentation.api import (
     modules_api_router,
     ratings_api_router,
@@ -68,3 +78,11 @@ admin = Admin(app, engine)
 admin.add_view(UserAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(TeamAdmin)
+admin.add_view(ModuleAdmin)
+admin.add_view(SectionAdmin)
+admin.add_view(TaskAdmin)
+admin.add_view(TaskQuestionAdmin)
+admin.add_view(TaskAnswerAdmin)
+admin.add_view(TaskMediaAdmin)
+admin.add_view(StateAdmin)
+admin.add_view(TeamAnswerAdmin)

@@ -2,7 +2,10 @@ import datetime as dt
 from enum import StrEnum
 
 from src.core.domain.entities import CustomModel
-from src.tasks.domain.exceptions import TaskIllegalStatusTransition
+from src.tasks.domain.exceptions import (
+    AnswersDoesNotMatchQuestions,
+    TaskIllegalStatusTransition,
+)
 
 COMPLETED_TEAM_MIN_SIZE = 3  # TODO: 5
 
@@ -74,7 +77,7 @@ class Task(CustomModel):
         ]:
             raise TaskIllegalStatusTransition()
         if len(answers) != len(self.questions):
-            raise Answer
+            raise AnswersDoesNotMatchQuestions()
         if self.manual_review or all(
             q.answer(s) for q, s in zip(self.questions, answers)
         ):

@@ -79,19 +79,19 @@ async def api_skip_task(
     team_provider: TeamProviderDep,
 ) -> TaskDTO:
     uid = auth.request.state.user.id
-    return await start_task(id, uid, uow, team_provider)
+    return await skip_task(id, uid, uow, team_provider)
 
 
 @ratings_api_router.get("/", response_model=RatingsListDTO)
-async def api_get_ratings() -> RatingsListDTO:
-    raise NotImplementedError
+async def api_get_ratings(uow: TaskUoWDep) -> RatingsListDTO:
+    return await get_ratings(uow)
 
 
 @ratings_api_router.get("/{id}", response_model=RatingDetailDTO)
-async def api_get_rating(id: int) -> RatingDetailDTO:
-    raise NotImplementedError
+async def api_get_rating(id: int, uow: TaskUoWDep) -> RatingDetailDTO:
+    return await get_rating(id, uow)
 
 
 @modules_api_router.get("/{id}/rating", response_model=RatingDetailDTO)
-async def api_module_get_rating(id: int) -> RatingDetailDTO:
-    raise NotImplementedError
+async def api_module_get_rating(id: int, uow: TaskUoWDep) -> RatingDetailDTO:
+    return await get_rating(id, uow)
