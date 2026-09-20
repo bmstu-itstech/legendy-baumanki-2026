@@ -272,3 +272,27 @@ body {
     animation: none;
   }
 }
+
+/*
+  Здание на карточке модуля: цветной слой заливается снизу вверх до доли
+  выполненных заданий (--building-top — сколько процентов сверху ещё не закрашено).
+*/
+@keyframes building-fill {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(var(--building-top, 100%) 0 0 0);
+  }
+}
+
+.building-fill {
+  animation: building-fill 1.2s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .building-fill {
+    animation: none;
+    clip-path: inset(var(--building-top, 100%) 0 0 0);
+  }
+}

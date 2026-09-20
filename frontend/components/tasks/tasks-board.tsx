@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Module, Task, TaskSection, TaskStatus } from "@/lib/types";
 
+import { ModuleBuilding } from "./module-building";
 import { formatOpenAt, isModuleOpen, useNow } from "./module-access";
 import { NODE_OUTER, STAR_OUTER, StarTaskNode, TaskMarker, TaskNode } from "./task-node";
 import { TaskPopover } from "./task-popover";
@@ -100,10 +101,10 @@ function ProgressBar({ value, total, label }: { value: number; total: number; la
       aria-valuemin={0}
       aria-valuemax={total}
       aria-valuenow={value}
-      className="h-2 w-full overflow-hidden rounded-full bg-ink/10"
+      className="h-3.5 w-full overflow-hidden rounded-full bg-ink/10"
     >
       <div
-        className="h-full rounded-full bg-secondary transition-[width] duration-500"
+        className="h-full rounded-full bg-accent transition-[width] duration-700"
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -339,6 +340,9 @@ function countCompleted(tasks: Task[]) {
   return tasks.filter((task) => task.status === "completed").length;
 }
 
+const cardClass = `${panelClass} overflow-hidden`;
+const cardDivider = "border-t-2 border-secondary/15";
+
 function ModuleSection({
   module,
   groups,
@@ -359,59 +363,84 @@ function ModuleSection({
   onToggle: () => void;
   onSelectTask: OnSelect;
 }) {
+  const mapId = useId();
   // Агрегат по основным заданиям модуля — побочные идут в отдельный зачёт.
   const mainTasks = groups.flatMap((group) => group.tasks);
   const completedCount = countCompleted(mainTasks);
+  const progress = mainTasks.length === 0 ? 0 : completedCount / mainTasks.length;
 
   if (locked) {
     return (
-      <section aria-label={module.name} className="flex items-center justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[1.5rem] font-bold uppercase text-ink/45 sm:text-[1.75rem]">
-            {module.name}
-          </h2>
-          <p className="mt-1 text-[0.875rem] text-ink/60">
-            Откроется {formatOpenAt(module.openAt)}
-          </p>
+      <section aria-label={module.name} className={cardClass}>
+        <div className="flex justify-center bg-white px-6 pt-8 pb-6">
+          <ModuleBuilding order={module.order} progress={0} locked />
         </div>
-        <LockedIcon />
+
+        <div className={`${cardDivider} flex items-center justify-between gap-4 px-5 py-4 sm:px-6`}>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[1.5rem] font-bold uppercase text-ink/45 sm:text-[1.75rem]">
+              {module.name}
+            </h2>
+            <p className="mt-1 text-[0.875rem] text-ink/60">
+              Откроется {formatOpenAt(module.openAt)}
+            </p>
+          </div>
+          <LockedIcon />
+        </div>
       </section>
     );
   }
 
   return (
-    <section aria-label={module.name}>
+    <section aria-label={module.name} className={cardClass}>
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
         aria-expanded={open}
+        aria-controls={mapId}
+        className="block w-full cursor-pointer text-left outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-accent"
       >
-        <span className="min-w-0 flex-1">
-          <span className="block text-[1.5rem] font-bold uppercase text-ink sm:text-[1.75rem]">
-            {module.name}
+        <span className="flex justify-center bg-white px-6 pt-8 pb-6">
+          <ModuleBuilding order={module.order} progress={progress} />
+        </span>
+
+        <span className={`${cardDivider} block px-5 pt-4 pb-5 sm:px-6`}>
+          <span className="flex items-center justify-between gap-3">
+            <span className="min-w-0 text-[1.5rem] font-bold uppercase text-ink sm:text-[1.75rem]">
+              {module.name}
+            </span>
+            <span className="shrink-0 rounded-[8px] bg-mist px-2.5 py-1 text-[0.9375rem] font-bold text-ink">
+              <span className="sr-only">Выполнено </span>
+              {completedCount}/{mainTasks.length}
+            </span>
           </span>
-          <span className="mt-1 block text-[0.875rem] text-ink/60">
-            Выполнено {completedCount} из {mainTasks.length}
-          </span>
-          <span className="mt-3 block max-w-[320px]">
+
+          <span className="mt-3 block">
             <ProgressBar
               value={completedCount}
               total={mainTasks.length}
               label={`Прогресс модуля «${module.name}»`}
             />
           </span>
+
+          <span className="mt-4 flex items-center justify-between gap-3">
+            <span className="text-[0.9375rem] font-bold uppercase tracking-wide text-secondary">
+              {open ? "Свернуть задания" : "Открыть задания"}
+            </span>
+            <ExpandIcon open={open} />
+          </span>
         </span>
-        <ExpandIcon open={open} />
       </button>
 
       {open ? (
-        <ModuleMap
-          groups={groups}
-          sideTasks={sideTasks}
-          selectedId={selectedId}
-          onSelect={onSelectTask}
-        />
+        <div id={mapId} className={`${cardDivider} px-5 pb-2 sm:px-6`}>
+          <ModuleMap
+            groups={groups}
+            sideTasks={sideTasks}
+            selectedId={selectedId}
+            onSelect={onSelectTask}
+          />
+        </div>
       ) : null}
     </section>
   );
@@ -556,7 +585,7 @@ export function TasksBoard() {
   return (
     <>
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-6">
           {modules
             .slice()
             .sort((a, b) => a.order - b.order)
