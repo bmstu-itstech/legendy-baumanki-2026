@@ -469,7 +469,9 @@ function StatusLegend() {
 
 function RulesPanel() {
   return (
-    <aside className={`${panelClass} order-first p-5 xl:order-none xl:sticky xl:top-16 xl:self-start`}>
+    <aside
+      className={`${panelClass} order-first p-5 xl:order-none xl:sticky xl:top-16 xl:max-h-[calc(100svh-4rem)] xl:self-start xl:overflow-y-auto xl:scrollbar-hidden`}
+    >
       <h2 className="text-[1.25rem] font-bold uppercase text-ink">Правила</h2>
       <div className="mt-4 space-y-3 text-[0.9375rem] leading-6 text-ink/75">
         <p>
@@ -584,7 +586,7 @@ export function TasksBoard() {
 
   return (
     <>
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-6">
           {modules
             .slice()

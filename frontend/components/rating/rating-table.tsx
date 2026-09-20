@@ -18,10 +18,17 @@ const cardClass =
  * вмещать «№ места» вместе с боковыми отступами: иначе колонка растянется под
  * содержимое и left второй колонки перестанет совпадать с её краем.
  * Горизонтальные отступы держим здесь, чтобы шапка и строки не разъехались.
+ * На мобильных обе колонки уже — иначе они съедают всю ширину карточки и под
+ * скроллящиеся колонки заданий не остаётся места (left второй колонки следует
+ * за шириной первой на каждом брейкпоинте).
  */
-const PLACE_CELL = "sticky left-0 z-20 w-[96px] min-w-[96px] bg-inherit pr-2 pl-4";
+const PLACE_CELL = "sticky left-0 z-20 w-16 min-w-16 bg-inherit pr-1 pl-3 sm:w-24 sm:min-w-24 sm:pr-2 sm:pl-4";
 const TEAM_CELL =
-  "sticky left-[96px] z-20 min-w-[176px] bg-inherit pr-4 shadow-[1px_0_0_rgb(8_24_58/0.12)]";
+  "sticky left-16 z-20 w-[124px] min-w-[124px] bg-inherit pr-2 shadow-[1px_0_0_rgb(8_24_58/0.12)] sm:left-24 sm:w-[176px] sm:min-w-[176px] sm:pr-4";
+const TEAM_NAME_BUTTON =
+  "block cursor-pointer appearance-none bg-transparent p-0 text-left font-inherit text-inherit underline decoration-dotted decoration-ink/40 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-accent";
+const TEAM_NAME_COLLAPSED = "truncate max-w-[104px] sm:max-w-[156px]";
+const TEAM_NAME_EXPANDED = "whitespace-normal break-words";
 
 /**
  * Полосатость строк. Цвет обязан быть непрозрачным: залипающие колонки берут
@@ -74,7 +81,7 @@ function BoardTabs({
       role="tablist"
       aria-label="Рейтинги"
       onKeyDown={handleKeyDown}
-      className="-mx-6 flex gap-2 overflow-x-auto px-6 py-1 sm:-mx-9 sm:px-9"
+      className="scrollbar-thin -mx-6 flex gap-2 overflow-x-auto px-6 pt-1 pb-3 sm:-mx-9 sm:px-9 sm:pt-1 sm:pb-3"
     >
       {boards.map((board) => {
         const active = board.id === value;
@@ -109,18 +116,27 @@ function BoardTabs({
 }
 
 function BoardTable({ board }: { board: RatingBoard }) {
+  // Названия команд обрезаны по ширине колонки; тултип title работает только
+  // по наведению, а на тач-устройствах его нет — поэтому по тапу разворачиваем
+  // название целиком прямо в ячейке (перенос строк внутри залипающей колонки).
+  const [expandedTeamId, setExpandedTeamId] = useState<RatingBoard["rows"][number]["teamId"] | null>(
+    null,
+  );
+
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div className="scrollbar-thin mt-5 overflow-x-auto">
       <table className="w-full min-w-max border-collapse text-left text-[0.9375rem] text-ink">
         <caption className="sr-only">Рейтинг команд: {board.title}</caption>
 
         <thead>
           <tr className="border-b-2 border-ink/15 bg-white text-[0.75rem] uppercase text-ink/55">
             <th scope="col" className={`${PLACE_CELL} py-2 font-bold whitespace-nowrap`}>
-              № места
+              <span className="sm:hidden">Место</span>
+              <span className="hidden sm:inline">№ места</span>
             </th>
             <th scope="col" className={`${TEAM_CELL} py-2 font-bold`}>
-              Название команды
+              <span className="sm:hidden">Команда</span>
+              <span className="hidden sm:inline">Название команды</span>
             </th>
             {board.columns.map((column) => (
               <th
@@ -150,7 +166,21 @@ function BoardTable({ board }: { board: RatingBoard }) {
               <td className={`${PLACE_CELL} py-3 align-top text-[1.0625rem] font-bold`}>
                 {row.place}
               </td>
-              <td className={`${TEAM_CELL} py-3 align-top`}>{row.teamName}</td>
+              <td className={`${TEAM_CELL} py-3 align-top`}>
+                <button
+                  type="button"
+                  title={row.teamName}
+                  aria-expanded={expandedTeamId === row.teamId}
+                  onClick={() =>
+                    setExpandedTeamId((current) => (current === row.teamId ? null : row.teamId))
+                  }
+                  className={`${TEAM_NAME_BUTTON} ${
+                    expandedTeamId === row.teamId ? TEAM_NAME_EXPANDED : TEAM_NAME_COLLAPSED
+                  }`}
+                >
+                  {row.teamName}
+                </button>
+              </td>
 
               {row.tasks.map((score) => (
                 <td key={score.taskId} className="px-2 py-3 text-center align-top">

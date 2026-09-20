@@ -71,6 +71,45 @@
   --radius-section: 80px;
 }
 
+/**
+ * Тонкий скролл для внутренних горизонтальных прокруток (вкладки рейтинга,
+ * таблица с залипающими колонками). scrollbar-width/scrollbar-color не
+ * наследуются от html на каждый скроллящийся блок отдельно (актуально для
+ * Firefox), поэтому задаём их явно, а не полагаемся на глобальные правила.
+ */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink) var(--color-mist);
+
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--color-mist);
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink);
+    border-radius: 8px;
+  }
+}
+
+/**
+ * Скролл есть (контент можно прокрутить колесом/тачем/клавиатурой), но сам
+ * скроллбар не рисуется — для панелей, где полоса прокрутки визуально
+ * лишняя (например «Правила» с фиксированной высотой).
+ */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility container-page {
   margin-inline: auto;
   width: 100%;
