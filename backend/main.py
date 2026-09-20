@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqladmin import Admin
 from src.auth.presentation.admin import UserAdmin
@@ -13,8 +13,14 @@ from src.auth.presentation.middlewares import (
 from src.core.config import settings
 from src.core.domain.exceptions.exceptions import AppException
 from src.db.engine import engine
+from src.files.presentation.api import files_api_router
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
 from src.profile.presentation.api import profiles_api_router, teams_api_router
+from src.tasks.presentation.api import (
+    modules_api_router,
+    ratings_api_router,
+    tasks_api_router,
+)
 from starlette.middleware.cors import CORSMiddleware
 
 logger = logging.getLogger(__name__)
@@ -47,13 +53,16 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
     )
 
-app.include_router(auth_api_router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
-app.include_router(
-    profiles_api_router, prefix=f"{settings.API_V1_STR}/profiles", tags=["profiles"]
-)
-app.include_router(
-    teams_api_router, prefix=f"{settings.API_V1_STR}/teams", tags=["teams"]
-)
+api_router = APIRouter()
+app.include_router(api_router, prefix=settings.API_V1_STR)
+
+api_router.include_router(auth_api_router, prefix="/auth", tags=["auth"])
+api_router.include_router(profiles_api_router, prefix="/profiles", tags=["profiles"])
+api_router.include_router(teams_api_router, prefix="/teams", tags=["teams"])
+api_router.include_router(modules_api_router, prefix="/modules", tags=["modules"])
+api_router.include_router(tasks_api_router, prefix="/tasks", tags=["tasks"])
+api_router.include_router(ratings_api_router, prefix="/ratings", tags=["ratings"])
+api_router.include_router(files_api_router, prefix="/files", tags=["files"])
 
 admin = Admin(app, engine)
 admin.add_view(UserAdmin)

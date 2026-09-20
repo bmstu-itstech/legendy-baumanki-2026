@@ -13,7 +13,7 @@ class TeamModel(BaseModel):
     # неявная ленивая перезагрузка колонки в AsyncSession падает с
     # MissingGreenlet. С eager_defaults SQLAlchemy сразу добавляет RETURNING
     # к самому UPDATE/INSERT, без отдельного похода в БД.
-    __mapper_args__ = {"eager_defaults": True}
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
