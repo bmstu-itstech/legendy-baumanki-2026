@@ -1,6 +1,14 @@
 // Temporary mock data for "Tasks" and "Rating" until the backend exposes real endpoints.
 
-import type { Module, RatingBoard, Task, TaskMedia, TaskSection, TaskStatus } from "@/lib/types";
+import type {
+  Module,
+  RatingBoard,
+  RatingRow,
+  Task,
+  TaskMedia,
+  TaskSection,
+  TaskStatus,
+} from "@/lib/types";
 
 const MODULE_NAMES = ["Мужество", "Воля", "Труд", "Упорство"] as const;
 const SECTION_TITLES = ["Очный", "Дистанционный"] as const;
@@ -103,47 +111,82 @@ export const MOCK_TASKS: Task[] = MOCK_SECTIONS.flatMap((section) =>
   }),
 );
 
-export const MOCK_RATING_BOARDS: RatingBoard[] = [
-  {
-    id: "overall",
-    title: "Общий",
-    rows: [
-      {
-        place: 1,
-        teamId: 1,
-        teamName: "Команда Организаторы",
-        tasks: [
-          { taskId: 111, points: 10, timeSec: 934 },
-          { taskId: 112, points: 5, timeSec: 61 },
-        ],
-        totalPoints: 15,
-        totalTimeSec: 995,
-      },
-      {
-        place: 2,
-        teamId: 2,
-        teamName: "Легенды 2.0",
-        tasks: [
-          { taskId: 111, points: 10, timeSec: 1200 },
-          { taskId: 112, points: 0, timeSec: null },
-        ],
-        totalPoints: 10,
-        totalTimeSec: 1200,
-      },
-    ],
-  },
-  {
-    id: "offline",
-    title: "Очный формат",
-    rows: [
-      {
-        place: 1,
-        teamId: 2,
-        teamName: "Легенды 2.0",
-        tasks: [{ taskId: 111, points: 10, timeSec: 1200 }],
-        totalPoints: 10,
-        totalTimeSec: 1200,
-      },
-    ],
-  },
+const MOCK_TEAM_NAMES = [
+  "Команда Организаторы",
+  "Легенды 2.0",
+  "Бауманский десант",
+  "Сопромат и точка",
+  "Ночные инженеры",
+  "Кафедра приключений",
+  "Пятый угол",
+  "Второй корпус",
 ];
+
+/** Детерминированный «шум» 0..1 (FNV-1a) — моки не должны меняться от рендера к рендеру. */
+function noise(...seeds: number[]) {
+  let hash = 2_166_136_261;
+
+  for (const seed of seeds) {
+    hash = Math.imul(hash ^ seed, 16_777_619);
+    hash = (hash ^ (hash >>> 13)) >>> 0;
+  }
+
+  return ((hash ^ (hash >>> 16)) >>> 0) / 4_294_967_296;
+}
+
+function buildBoard(section: TaskSection): RatingBoard {
+  const parentModule = MOCK_MODULES.find((item) => item.id === section.moduleId);
+  const tasks = MOCK_TASKS.filter((task) => task.sectionId === section.id);
+
+  const rows: RatingRow[] = MOCK_TEAM_NAMES.map((teamName, teamIndex) => {
+    // Чем ниже команда в списке, тем реже она закрывает задания и тем дольше идёт.
+    const skill = 0.95 - teamIndex * 0.09;
+
+    const scores = tasks.map((task) => {
+      const roll = noise(section.id, teamIndex, task.id);
+
+      if (roll > skill) {
+        return { taskId: task.id, points: 0, timeSec: null };
+      }
+
+      return {
+        taskId: task.id,
+        points: task.points,
+        timeSec: 120 + Math.round(roll * 600) + teamIndex * 45,
+      };
+    });
+
+    return {
+      place: 0,
+      teamId: teamIndex + 1,
+      teamName,
+      tasks: scores,
+      totalPoints: scores.reduce((sum, score) => sum + score.points, 0),
+      totalTimeSec: scores.reduce((sum, score) => sum + (score.timeSec ?? 0), 0),
+    };
+  });
+
+  // Ранжирование: сначала сумма баллов, при равенстве — суммарное время.
+  rows.sort((a, b) => b.totalPoints - a.totalPoints || a.totalTimeSec - b.totalTimeSec);
+  rows.forEach((row, index) => {
+    row.place = index + 1;
+  });
+
+  return {
+    id: `section-${section.id}`,
+    moduleId: section.moduleId,
+    moduleName: parentModule?.name ?? `Модуль ${section.moduleId}`,
+    sectionId: section.id,
+    sectionTitle: section.title,
+    columns: tasks.map((task) => ({
+      taskId: task.id,
+      index: task.index,
+      title: task.title,
+      maxPoints: task.points,
+    })),
+    rows,
+  };
+}
+
+/** По рейтингу на каждый раздел: 4 модуля × очный / дистанционный. */
+export const MOCK_RATING_BOARDS: RatingBoard[] = MOCK_SECTIONS.map(buildBoard);

@@ -14,12 +14,13 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskStatus } from "@/lib/types";
 
 import { LiveTaskNode, NODE_SIZE } from "./task-node";
 import { STATUS_THEME } from "./task-status";
-import { formatDuration, useElapsedSeconds } from "./use-elapsed";
+import { useElapsedSeconds } from "./use-elapsed";
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 

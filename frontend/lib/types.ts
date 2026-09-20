@@ -165,22 +165,44 @@ export type Task = {
 
 export type RatingTaskScore = {
   taskId: number;
+  /** Баллы за задание; 0 — задание не зачтено. */
   points: number;
+  /** Время выполнения, null — команда за задание не бралась либо не закрыла его. */
   timeSec: number | null;
+};
+
+/** Колонка «Задание N» — общая шапка для всех строк рейтинга. */
+export type RatingTaskColumn = {
+  taskId: number;
+  /** Номер задания в разделе. */
+  index: number;
+  /** Полное название — уходит в подсказку над колонкой. */
+  title: string;
+  maxPoints: number;
 };
 
 export type RatingRow = {
   place: number;
   teamId: number;
   teamName: string;
+  /** Результаты в том же порядке, что и columns у борды. */
   tasks: RatingTaskScore[];
   totalPoints: number;
   totalTimeSec: number;
 };
 
-/** Один из нескольких рейтингов, между которыми можно переключаться (см. стикер на доске). */
+/**
+ * Рейтинг одного раздела: модуль + формат (очный / дистанционный). Между
+ * бордами переключает селект на странице (см. стикер на доске).
+ */
 export type RatingBoard = {
   id: string;
-  title: string;
+  moduleId: number;
+  moduleName: string;
+  sectionId: number;
+  /** «Очный» / «Дистанционный» — подпись раздела внутри модуля. */
+  sectionTitle: string;
+  columns: RatingTaskColumn[];
+  /** Уже отсортированы: по сумме баллов, при равенстве — по суммарному времени. */
   rows: RatingRow[];
 };

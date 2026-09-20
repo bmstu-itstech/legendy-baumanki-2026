@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 
 import { Modal } from "@/components/ui/modal";
+import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskMedia } from "@/lib/types";
 
 import { TaskStatusBadge } from "./task-status-badge";
-import { formatDuration, useElapsedSeconds } from "./use-elapsed";
+import { useElapsedSeconds } from "./use-elapsed";
 
 const cardClass = "rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9";
 
