@@ -8,6 +8,7 @@ import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskMedia } from "@/lib/types";
 
 import { TaskStatusBadge } from "./task-status-badge";
+import { formatDuration, useElapsedSeconds } from "./use-elapsed";
 
 const cardClass = "rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9";
 
@@ -20,31 +21,6 @@ type PendingAction = "start" | "submit" | "skip";
 
 function formatTaskNumber(id: number) {
   return `#${String(id).padStart(4, "0")}`;
-}
-
-function formatDuration(totalSeconds: number) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-/** Секунды от старта задания: тикает, пока задание в процессе, и замирает после завершения. */
-function useElapsedSeconds(startedAt: string | null, finishedAt: string | null) {
-  const running = startedAt !== null && finishedAt === null;
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  if (!startedAt) return null;
-
-  const end = finishedAt ? new Date(finishedAt).getTime() : now;
-  return Math.max(0, Math.floor((end - new Date(startedAt).getTime()) / 1000));
 }
 
 /** Формат ответа проверяем регуляркой от бэка (полное совпадение, как у атрибута pattern). */
