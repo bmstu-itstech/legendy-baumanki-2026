@@ -5,7 +5,7 @@ export const STATUS_LABEL: Record<TaskStatus, string> = {
   closed: "Закрыто",
   opened: "Открыто",
   started: "В процессе",
-  moderation: "На проверке",
+  review: "На проверке",
   completed: "Готово",
   skipped: "Пропущено",
   failed: "Не принято",
@@ -50,7 +50,7 @@ export const STATUS_THEME: Record<TaskStatus, StatusTheme> = {
   },
   opened: GREEN,
   started: GREEN,
-  moderation: {
+  review: {
     face: "#f4b73f",
     edge: "#c08414",
     glyph: "#ffffff",

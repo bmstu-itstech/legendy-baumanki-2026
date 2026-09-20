@@ -91,25 +91,34 @@ export type TaskFormat = "offline" | "online";
  * Статус задания для команды. Переходы (по мокапу с доски):
  * closed -> opened (авто, когда закрыто предыдущее)
  * opened -> skipped | started
- * started -> skipped | moderation (ручная проверка) | completed (авто-проверка)
- * moderation -> completed | failed
+ * started -> skipped | review (ручная проверка) | completed (авто-проверка)
+ * review -> completed | failed
  */
 export type TaskStatus =
   | "closed"
   | "opened"
   | "started"
-  | "moderation"
+  | "review"
   | "completed"
   | "skipped"
   | "failed";
 
 export type TaskCheckType = "auto" | "manual";
 
+/**
+ * main — основное задание на «змейке» модуля; side — побочное (вспомогательное):
+ * на карте рисуется звездой в изгибе змейки, а в рейтинге идёт отдельным зачётом.
+ * В API побочные задания приходят отдельным списком `auxiliary_tasks` модуля.
+ */
+export type TaskKind = "main" | "side";
+
 export type Module = {
   id: number;
   name: string;
   order: number;
   sectionsCount: number;
+  /** ISO-дата открытия (`open_at` в API). Модули открываются постепенно: до этой даты задания недоступны. */
+  openAt: string;
 };
 
 export type TaskSection = {
@@ -132,8 +141,10 @@ export type TaskMedia = {
 
 export type Task = {
   id: number;
+  /** Раздел модуля. Побочные задания привязаны к первому разделу, но на карте живут отдельно. */
   sectionId: number;
-  /** Номер задания в кружочке на карте раздела. */
+  kind: TaskKind;
+  /** Номер задания в кружочке на карте раздела (у побочных не показывается). */
   index: number;
   title: string;
   /** Общее описание — видно, пока задание не начато. */
@@ -155,7 +166,9 @@ export type Task = {
    */
   explanation: string | null;
   checkType: TaskCheckType;
+  /** Лимита времени нет — задания атомарны. Поле оставлено под черновик API, в моках всегда null. */
   timeLimitSec: number | null;
+  /** Баллы за задание: в большинстве случаев 1. */
   points: number;
   status: TaskStatus;
   startedAt: string | null;
@@ -174,7 +187,7 @@ export type RatingTaskScore = {
 /** Колонка «Задание N» — общая шапка для всех строк рейтинга. */
 export type RatingTaskColumn = {
   taskId: number;
-  /** Номер задания в разделе. */
+  /** Порядковый номер колонки в рейтинге — подпись «Задание N». */
   index: number;
   /** Полное название — уходит в подсказку над колонкой. */
   title: string;
@@ -192,16 +205,17 @@ export type RatingRow = {
 };
 
 /**
- * Рейтинг одного раздела: модуль + формат (очный / дистанционный). Между
- * бордами переключает селект на странице (см. стикер на доске).
+ * Один рейтинг из пяти: по модулю (Мужество, Воля, Труд, Упорство — очные и
+ * дистанционные задания вместе, без деления на форматы) либо особый рейтинг
+ * побочных заданий. Между бордами переключает селект на странице.
  */
 export type RatingBoard = {
   id: string;
-  moduleId: number;
-  moduleName: string;
-  sectionId: number;
-  /** «Очный» / «Дистанционный» — подпись раздела внутри модуля. */
-  sectionTitle: string;
+  /** «Мужество» … «Побочные задания» — подпись в селекте и таблице. */
+  title: string;
+  kind: "module" | "side";
+  /** Только для kind: "module". */
+  moduleId?: number;
   columns: RatingTaskColumn[];
   /** Уже отсортированы: по сумме баллов, при равенстве — по суммарному времени. */
   rows: RatingRow[];

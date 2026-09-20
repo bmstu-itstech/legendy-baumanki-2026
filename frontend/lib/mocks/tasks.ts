@@ -16,7 +16,7 @@ const STATUS_SEQUENCE: TaskStatus[] = [
   "completed",
   "opened",
   "started",
-  "moderation",
+  "review",
   "closed",
   "skipped",
   "failed",
@@ -24,11 +24,18 @@ const STATUS_SEQUENCE: TaskStatus[] = [
   "closed",
 ];
 
+/**
+ * Сдвиг открытия модулей от «сейчас», часы. В бою модули открываются по одному
+ * (день за днём); в моках первые два уже открыты, остальные — закрыты по дате.
+ */
+const MODULE_OPEN_OFFSET_HOURS = [-24, -1, 24, 48];
+
 export const MOCK_MODULES: Module[] = MODULE_NAMES.map((name, index) => ({
   id: index + 1,
   name,
   order: index + 1,
   sectionsCount: SECTION_TITLES.length,
+  openAt: new Date(Date.now() + MODULE_OPEN_OFFSET_HOURS[index] * 3_600_000).toISOString(),
 }));
 
 export const MOCK_SECTIONS: TaskSection[] = MOCK_MODULES.flatMap((module) =>
@@ -41,8 +48,8 @@ export const MOCK_SECTIONS: TaskSection[] = MOCK_MODULES.flatMap((module) =>
   })),
 );
 
-const STARTED_STATUSES: TaskStatus[] = ["started", "moderation", "failed", "completed"];
-const FINISHED_STATUSES: TaskStatus[] = ["moderation", "failed", "completed"];
+const STARTED_STATUSES: TaskStatus[] = ["started", "review", "failed", "completed"];
+const FINISHED_STATUSES: TaskStatus[] = ["review", "failed", "completed"];
 
 function getStartedAt(status: TaskStatus, seed: number) {
   if (!STARTED_STATUSES.includes(status)) {
@@ -80,36 +87,88 @@ function getMockMedia(taskId: number, taskNumber: number): TaskMedia[] {
   }));
 }
 
-export const MOCK_TASKS: Task[] = MOCK_SECTIONS.flatMap((section) =>
-  Array.from({ length: section.tasksCount }, (_, index) => {
-    const status = STATUS_SEQUENCE[(section.id + index) % STATUS_SEQUENCE.length];
-    const taskNumber = index + 1;
-    const id = section.id * 100 + taskNumber;
-    const startedAt = getStartedAt(status, section.id + taskNumber);
+/** Баллы: почти всегда 1, для разнообразия рейтинга изредка 2–3. */
+function getMockPoints(taskId: number) {
+  if (taskId % 11 === 0) return 3;
+  if (taskId % 7 === 0) return 2;
+  return 1;
+}
 
-    return {
-      id,
+function createMockTask({
+  id,
+  sectionId,
+  kind,
+  index,
+  title,
+  status,
+}: {
+  id: number;
+  sectionId: number;
+  kind: Task["kind"];
+  index: number;
+  title: string;
+  status: TaskStatus;
+}): Task {
+  const startedAt = getStartedAt(status, id);
+
+  return {
+    id,
+    sectionId,
+    kind,
+    index,
+    title,
+    description:
+      "Выполните задание команды и отправьте результат на проверку. Детальное описание появится здесь после подключения боевого API.",
+    assignment:
+      "Найдите указанное место на территории университета и введите кодовое слово, которое вы там обнаружите. Подробный текст задания появится здесь после подключения боевого API.",
+    media: getMockMedia(id, index),
+    answerLabel: "Кодовое слово",
+    answerPattern: index % 2 === 0 ? "[A-Za-zА-Яа-яЁё0-9-]{3,32}" : null,
+    explanation:
+      "Именно здесь много лет назад начиналась история этого места. Пояснение к заданию откроется после успешного выполнения.",
+    checkType: index % 2 === 0 ? "auto" : "manual",
+    timeLimitSec: null,
+    points: getMockPoints(id),
+    status,
+    startedAt,
+    finishedAt: getFinishedAt(status, startedAt, id),
+  };
+}
+
+const MOCK_MAIN_TASKS: Task[] = MOCK_SECTIONS.flatMap((section) =>
+  Array.from({ length: section.tasksCount }, (_, index) =>
+    createMockTask({
+      id: section.id * 100 + index + 1,
       sectionId: section.id,
-      index: taskNumber,
-      title: `${section.title}: задание ${taskNumber}`,
-      description:
-        "Выполните задание команды и отправьте результат на проверку. Детальное описание появится здесь после подключения боевого API.",
-      assignment:
-        "Найдите указанное место на территории университета и введите кодовое слово, которое вы там обнаружите. Подробный текст задания появится здесь после подключения боевого API.",
-      media: getMockMedia(id, taskNumber),
-      answerLabel: "Кодовое слово",
-      answerPattern: taskNumber % 2 === 0 ? "[A-Za-zА-Яа-яЁё0-9-]{3,32}" : null,
-      explanation:
-        "Именно здесь много лет назад начиналась история этого места. Пояснение к заданию откроется после успешного выполнения.",
-      checkType: taskNumber % 2 === 0 ? "auto" : "manual",
-      timeLimitSec: taskNumber % 3 === 0 ? 900 : 600,
-      points: 5 + taskNumber * 2,
-      status,
-      startedAt,
-      finishedAt: getFinishedAt(status, startedAt, section.id + taskNumber),
-    } satisfies Task;
-  }),
+      kind: "main",
+      index: index + 1,
+      title: `${section.title}: задание ${index + 1}`,
+      status: STATUS_SEQUENCE[(section.id + index) % STATUS_SEQUENCE.length],
+    }),
+  ),
 );
+
+/**
+ * Побочные задания — по 2–3 на модуль. Привязаны к первому разделу модуля, но
+ * на карте выносятся в изгибы змейки звёздами (в API это `auxiliary_tasks`).
+ */
+const MOCK_SIDE_TASKS: Task[] = MOCK_MODULES.flatMap((module) => {
+  const firstSection = MOCK_SECTIONS.find((section) => section.moduleId === module.id);
+  if (!firstSection) return [];
+
+  return Array.from({ length: 2 + (module.id % 2) }, (_, index) =>
+    createMockTask({
+      id: firstSection.id * 100 + 50 + index + 1,
+      sectionId: firstSection.id,
+      kind: "side",
+      index: index + 1,
+      title: `${module.name}: побочное задание ${index + 1}`,
+      status: STATUS_SEQUENCE[(module.id * 3 + index * 2) % STATUS_SEQUENCE.length],
+    }),
+  );
+});
+
+export const MOCK_TASKS: Task[] = [...MOCK_MAIN_TASKS, ...MOCK_SIDE_TASKS];
 
 const MOCK_TEAM_NAMES = [
   "Команда Организаторы",
@@ -134,16 +193,27 @@ function noise(...seeds: number[]) {
   return ((hash ^ (hash >>> 16)) >>> 0) / 4_294_967_296;
 }
 
-function buildBoard(section: TaskSection): RatingBoard {
-  const parentModule = MOCK_MODULES.find((item) => item.id === section.moduleId);
-  const tasks = MOCK_TASKS.filter((task) => task.sectionId === section.id);
+function buildBoard({
+  id,
+  title,
+  kind,
+  moduleId,
+  tasks,
+}: {
+  id: string;
+  title: string;
+  kind: RatingBoard["kind"];
+  moduleId?: number;
+  tasks: Task[];
+}): RatingBoard {
+  const seed = moduleId ?? 99;
 
   const rows: RatingRow[] = MOCK_TEAM_NAMES.map((teamName, teamIndex) => {
     // Чем ниже команда в списке, тем реже она закрывает задания и тем дольше идёт.
     const skill = 0.95 - teamIndex * 0.09;
 
     const scores = tasks.map((task) => {
-      const roll = noise(section.id, teamIndex, task.id);
+      const roll = noise(seed, teamIndex, task.id);
 
       if (roll > skill) {
         return { taskId: task.id, points: 0, timeSec: null };
@@ -173,14 +243,13 @@ function buildBoard(section: TaskSection): RatingBoard {
   });
 
   return {
-    id: `section-${section.id}`,
-    moduleId: section.moduleId,
-    moduleName: parentModule?.name ?? `Модуль ${section.moduleId}`,
-    sectionId: section.id,
-    sectionTitle: section.title,
-    columns: tasks.map((task) => ({
+    id,
+    title,
+    kind,
+    moduleId,
+    columns: tasks.map((task, index) => ({
       taskId: task.id,
-      index: task.index,
+      index: index + 1,
       title: task.title,
       maxPoints: task.points,
     })),
@@ -188,5 +257,25 @@ function buildBoard(section: TaskSection): RatingBoard {
   };
 }
 
-/** По рейтингу на каждый раздел: 4 модуля × очный / дистанционный. */
-export const MOCK_RATING_BOARDS: RatingBoard[] = MOCK_SECTIONS.map(buildBoard);
+/**
+ * Пять рейтингов: четыре модуля (очные и дистанционные задания вместе, порядок —
+ * как на карте) и отдельный рейтинг побочных заданий («звёзд» из изгибов).
+ */
+export const MOCK_RATING_BOARDS: RatingBoard[] = [
+  ...MOCK_MODULES.map((module) => {
+    const sectionIds = MOCK_SECTIONS.filter((section) => section.moduleId === module.id)
+      .sort((a, b) => a.order - b.order)
+      .map((section) => section.id);
+
+    return buildBoard({
+      id: `module-${module.id}`,
+      title: module.name,
+      kind: "module",
+      moduleId: module.id,
+      tasks: sectionIds.flatMap((sectionId) =>
+        MOCK_MAIN_TASKS.filter((task) => task.sectionId === sectionId),
+      ),
+    });
+  }),
+  buildBoard({ id: "side", title: "Побочные задания", kind: "side", tasks: MOCK_SIDE_TASKS }),
+];

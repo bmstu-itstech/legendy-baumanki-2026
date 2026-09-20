@@ -18,7 +18,7 @@ import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskStatus } from "@/lib/types";
 
-import { LiveTaskNode, NODE_SIZE } from "./task-node";
+import { TaskMarker } from "./task-node";
 import { STATUS_THEME } from "./task-status";
 import { useElapsedSeconds } from "./use-elapsed";
 
@@ -43,11 +43,11 @@ const ANCHOR_GAP = 14;
 const ARROW_INSET = 30;
 
 /** Показываем время от старта, пока задание не завершено окончательно (по ТЗ с доски). */
-const TIMER_STATUSES: TaskStatus[] = ["started", "moderation", "failed"];
+const TIMER_STATUSES: TaskStatus[] = ["started", "review", "failed"];
 
 const STATUS_NOTE: Partial<Record<TaskStatus, (task: Task) => string>> = {
   closed: () => "Откроется, когда вы завершите предыдущее задание.",
-  moderation: () => "Ответ отправлен и ждёт проверки модератором.",
+  review: () => "Ответ отправлен и ждёт проверки модератором.",
   completed: (task) => `Задание выполнено. Начислено баллов: ${task.points}.`,
   skipped: () => "Вы пропустили это задание — баллы не начисляются.",
   failed: () => "Ответ не принят — баллы за это задание не начислены.",
@@ -88,13 +88,10 @@ function ElapsedTimer({ task }: { task: Task }) {
 
 export function TaskPopover({
   task,
-  total,
   anchorEl,
   onClose,
 }: {
   task: Task;
-  /** Сколько заданий в разделе — для строки «Задание 2 из 6». */
-  total: number;
   /** Кружок на карте, от которого открыли облачко. Пока оно открыто, кружок скрыт, но его геометрия жива. */
   anchorEl: HTMLElement;
   onClose: () => void;
@@ -117,7 +114,7 @@ export function TaskPopover({
   const canContinue = task.status === "started";
   const canSkip = task.status === "opened" || task.status === "started";
   const canView =
-    task.status === "moderation" ||
+    task.status === "review" ||
     task.status === "completed" ||
     task.status === "failed" ||
     task.status === "skipped";
@@ -374,7 +371,7 @@ export function TaskPopover({
       {/* Тот же кружок на прежнем месте: оригинал на карте на время модалки скрыт. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed"
+        className="pointer-events-none fixed flex items-center justify-center"
         style={{
           left: anchor.left,
           top: anchor.top,
@@ -382,7 +379,7 @@ export function TaskPopover({
           height: anchor.height,
         }}
       >
-        <LiveTaskNode task={task} ring size={NODE_SIZE} />
+        <TaskMarker task={task} ring />
       </div>
 
       <div
@@ -418,12 +415,11 @@ export function TaskPopover({
           {task.title}
         </h2>
 
-        <div className="relative mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[1rem] leading-6">
-          <span className="opacity-90">
-            Задание {task.index} из {total}
-          </span>
-          {timerVisible ? <ElapsedTimer task={task} /> : null}
-        </div>
+        {timerVisible ? (
+          <div className="relative mt-2 flex">
+            <ElapsedTimer task={task} />
+          </div>
+        ) : null}
 
         {note ? <p className="relative mt-3 text-[0.9375rem] leading-5">{note}</p> : null}
 

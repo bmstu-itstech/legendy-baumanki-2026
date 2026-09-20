@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+
+import { Star } from "@/components/ui/decor";
 
 import { formatDuration } from "@/lib/format";
 import { useRatingStore } from "@/lib/store/rating-store";
@@ -28,59 +30,81 @@ const TEAM_CELL =
  */
 const ROW_STRIPE = "bg-white even:bg-[#f6f6fa]";
 
-/** Подпись рейтинга: модуль и формат одной строкой — в селекте и в подписи таблицы. */
-function boardLabel(board: RatingBoard) {
-  return `${board.moduleName} — ${board.sectionTitle}`;
-}
-
-function ChevronIcon() {
-  return (
-    <svg
-      viewBox="0 0 12 8"
-      fill="none"
-      aria-hidden="true"
-      className="pointer-events-none absolute top-1/2 right-4 size-3 -translate-y-1/2 text-ink/60"
-    >
-      <path
-        d="M1 1.5 6 6.5 11 1.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function BoardSelect({
+/**
+ * Рейтинги — вкладки слева направо над таблицей (не «браузерные»: те же плашки,
+ * что и в меню профиля). Ряд скроллится по горизонтали, на мобильных — до края экрана.
+ * Паттерн WAI-ARIA tabs: стрелки, Home/End, «ролящийся» tabindex.
+ */
+function BoardTabs({
   boards,
   value,
+  idPrefix,
   onChange,
 }: {
   boards: RatingBoard[];
   value: string;
+  idPrefix: string;
   onChange: (boardId: string) => void;
 }) {
+  const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+
+  // Активная вкладка не должна оставаться за краем прокручиваемого ряда.
+  useEffect(() => {
+    tabRefs.current.get(value)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [value]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const current = boards.findIndex((board) => board.id === value);
+    let next = current;
+
+    if (event.key === "ArrowRight") next = (current + 1) % boards.length;
+    else if (event.key === "ArrowLeft") next = (current - 1 + boards.length) % boards.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = boards.length - 1;
+    else return;
+
+    event.preventDefault();
+    const target = boards[next];
+    onChange(target.id);
+    tabRefs.current.get(target.id)?.focus();
+  }
+
   return (
-    <label className="flex w-full flex-col gap-2 sm:max-w-[420px]">
-      <span className="text-[0.8125rem] font-bold uppercase text-ink/55">Модуль и формат</span>
+    <div
+      role="tablist"
+      aria-label="Рейтинги"
+      onKeyDown={handleKeyDown}
+      className="-mx-6 flex gap-2 overflow-x-auto px-6 py-1 sm:-mx-9 sm:px-9"
+    >
+      {boards.map((board) => {
+        const active = board.id === value;
 
-      <span className="relative block">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-12 w-full cursor-pointer appearance-none rounded-[12px] border-2 border-secondary bg-white pr-11 pl-4 text-[1rem] font-bold uppercase text-ink outline-none focus-visible:ring-4 focus-visible:ring-accent"
-        >
-          {boards.map((board) => (
-            <option key={board.id} value={board.id}>
-              {boardLabel(board)}
-            </option>
-          ))}
-        </select>
-
-        <ChevronIcon />
-      </span>
-    </label>
+        return (
+          <button
+            key={board.id}
+            ref={(element) => {
+              if (element) tabRefs.current.set(board.id, element);
+              else tabRefs.current.delete(board.id);
+            }}
+            type="button"
+            role="tab"
+            id={`${idPrefix}-tab-${board.id}`}
+            aria-selected={active}
+            aria-controls={`${idPrefix}-panel`}
+            tabIndex={active ? 0 : -1}
+            onClick={() => onChange(board.id)}
+            className={`flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-[14px] border-2 px-4 font-hand text-[1.0625rem] uppercase whitespace-nowrap outline-none transition-colors focus-visible:ring-4 focus-visible:ring-accent ${
+              active
+                ? "border-secondary bg-secondary text-white"
+                : "border-secondary/25 text-ink hover:bg-mist"
+            }`}
+          >
+            {board.kind === "side" ? <Star className="size-4 shrink-0" /> : null}
+            {board.title}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -88,7 +112,7 @@ function BoardTable({ board }: { board: RatingBoard }) {
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full min-w-max border-collapse text-left text-[0.9375rem] text-ink">
-        <caption className="sr-only">Рейтинг команд: {boardLabel(board)}</caption>
+        <caption className="sr-only">Рейтинг команд: {board.title}</caption>
 
         <thead>
           <tr className="border-b-2 border-ink/15 bg-white text-[0.75rem] uppercase text-ink/55">
@@ -157,6 +181,7 @@ export function RatingTable() {
   const error = useRatingStore((state) => state.error);
   const fetchRating = useRatingStore((state) => state.fetch);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
+  const idPrefix = useId();
 
   useEffect(() => {
     fetchRating();
@@ -192,18 +217,29 @@ export function RatingTable() {
 
   return (
     <div className={cardClass}>
-      <BoardSelect boards={boards} value={activeBoard.id} onChange={setActiveBoardId} />
+      <BoardTabs
+        boards={boards}
+        value={activeBoard.id}
+        idPrefix={idPrefix}
+        onChange={setActiveBoardId}
+      />
 
-      <p className="mt-4 text-[0.8125rem] leading-5 text-ink/55">
-        В колонках заданий сверху баллы, снизу — время выполнения. Место определяется суммой
-        баллов, при равенстве — суммарным временем.
-      </p>
+      <div
+        role="tabpanel"
+        id={`${idPrefix}-panel`}
+        aria-labelledby={`${idPrefix}-tab-${activeBoard.id}`}
+      >
+        <p className="mt-4 text-[0.8125rem] leading-5 text-ink/55">
+          В колонках заданий сверху баллы, снизу — время выполнения. Место определяется суммой
+          баллов, при равенстве — суммарным временем.
+        </p>
 
-      {activeBoard.rows.length === 0 ? (
-        <p className="mt-6 text-[1rem] text-ink/70">В этом рейтинге пока нет результатов.</p>
-      ) : (
-        <BoardTable board={activeBoard} />
-      )}
+        {activeBoard.rows.length === 0 ? (
+          <p className="mt-6 text-[1rem] text-ink/70">В этом рейтинге пока нет результатов.</p>
+        ) : (
+          <BoardTable board={activeBoard} />
+        )}
+      </div>
     </div>
   );
 }

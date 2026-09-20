@@ -1,9 +1,9 @@
 "use client";
 
+import { STAR_PATH } from "@/components/ui/decor";
 import type { Task, TaskStatus } from "@/lib/types";
 
 import { STATUS_THEME } from "./task-status";
-import { useElapsedSeconds } from "./use-elapsed";
 
 /** Диаметр самого кружка на карте. */
 export const NODE_SIZE = 76;
@@ -12,9 +12,13 @@ export const RING_PAD = 20;
 /** Полный размер кружка вместе с кольцом. */
 export const NODE_OUTER = NODE_SIZE + RING_PAD;
 
+/** Диаметр звезды побочного задания и полный размер вместе с запасом под тень. */
+export const STAR_SIZE = 76;
+export const STAR_OUTER = 88;
+
 const RING_STROKE = 5;
-const RING_TRACK = "#3a4a53";
-const WARNING_COLOR = "#f4b73f";
+/** Кольцо читается и на светлом фоне карты, и на затемнении под облачком. */
+const RING_TRACK = "#b3b7d8";
 
 function StatusGlyph({ status, size }: { status: TaskStatus; size: number }) {
   const common = {
@@ -60,7 +64,7 @@ function StatusGlyph({ status, size }: { status: TaskStatus; size: number }) {
           />
         </svg>
       );
-    case "moderation":
+    case "review":
       return (
         <svg {...common} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <path d="M6.5 3.5h11M6.5 20.5h11" />
@@ -95,15 +99,13 @@ type TaskNodeProps = {
   index?: number;
   /** Диаметр самого кружка (без кольца). */
   size?: number;
-  /** Рисовать ли кольцо вокруг кружка. */
+  /** Рисовать ли кольцо «ты здесь» вокруг кружка. */
   ring?: boolean;
-  /** Доля пройденного времени 0..1 — закрашивает дугу на кольце. */
-  progress?: number | null;
   className?: string;
 };
 
 /**
- * «Монетка» задания: цвет и иконка зависят от статуса, снизу тёмная грань
+ * «Монетка» основного задания: цвет и иконка зависят от статуса, снизу тёмная грань
  * для объёма (как на фрейме). Ничего не знает про клики — оборачивается
  * в кнопку/ссылку снаружи.
  */
@@ -112,16 +114,12 @@ export function TaskNode({
   index,
   size = NODE_SIZE,
   ring = false,
-  progress = null,
   className = "",
 }: TaskNodeProps) {
   const theme = STATUS_THEME[status];
   const depth = Math.max(2, Math.round(size * 0.08));
   const outer = size + RING_PAD;
   const radius = (outer - RING_STROKE) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const arc = progress === null ? null : Math.max(0.03, Math.min(1, progress));
-  const arcColor = arc !== null && arc >= 0.85 ? WARNING_COLOR : theme.face;
 
   return (
     <span
@@ -132,7 +130,7 @@ export function TaskNode({
         <svg
           viewBox={`0 0 ${outer} ${outer}`}
           aria-hidden="true"
-          className="absolute inset-0 -rotate-90"
+          className="absolute inset-0"
         >
           <circle
             cx={outer / 2}
@@ -142,18 +140,6 @@ export function TaskNode({
             stroke={RING_TRACK}
             strokeWidth={RING_STROKE}
           />
-          {arc !== null ? (
-            <circle
-              cx={outer / 2}
-              cy={outer / 2}
-              r={radius}
-              fill="none"
-              stroke={arcColor}
-              strokeWidth={RING_STROKE}
-              strokeLinecap="round"
-              strokeDasharray={`${circumference * arc} ${circumference}`}
-            />
-          ) : null}
         </svg>
       ) : null}
 
@@ -179,32 +165,60 @@ export function TaskNode({
   );
 }
 
-/** Кружок задания с живым кольцом-таймером: для «в процессе» дуга растёт вместе со временем. */
-export function LiveTaskNode({
+type StarTaskNodeProps = {
+  status: TaskStatus;
+  size?: number;
+  className?: string;
+};
+
+/**
+ * Звезда побочного задания — живёт в изгибах змейки. Цвет по статусу тот же, что
+ * у монетки; номера нет, зато внутри иконка статуса (кроме «Открыто»: звезда в звезде лишняя).
+ */
+export function StarTaskNode({ status, size = STAR_SIZE, className = "" }: StarTaskNodeProps) {
+  const theme = STATUS_THEME[status];
+  const depth = Math.max(2, Math.round(size * 0.07));
+
+  return (
+    <span
+      className={`relative inline-flex shrink-0 items-center justify-center ${className}`}
+      style={{ width: size, height: size, color: theme.glyph }}
+    >
+      <svg
+        viewBox="0 0 94.6498 94.7089"
+        aria-hidden="true"
+        className="absolute inset-0 size-full overflow-visible"
+        style={{ filter: `drop-shadow(0 ${depth}px 0 ${theme.edge})` }}
+      >
+        <path
+          d={STAR_PATH}
+          fill={theme.face}
+          stroke={theme.edge}
+          strokeWidth={6.67}
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {status !== "opened" ? (
+        <span className="relative">
+          <StatusGlyph status={status} size={Math.round(size * 0.36)} />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** Маркер задания на карте: монетка для основных, звезда для побочных. */
+export function TaskMarker({
   task,
-  ring,
-  size,
+  ring = false,
   className,
 }: {
   task: Task;
-  ring: boolean;
-  size?: number;
+  ring?: boolean;
   className?: string;
 }) {
-  const elapsed = useElapsedSeconds(task.startedAt, task.finishedAt);
-  const progress =
-    task.status === "started" && task.timeLimitSec && elapsed !== null
-      ? elapsed / task.timeLimitSec
-      : null;
+  if (task.kind === "side") return <StarTaskNode status={task.status} className={className} />;
 
-  return (
-    <TaskNode
-      status={task.status}
-      index={task.index}
-      size={size}
-      ring={ring}
-      progress={progress}
-      className={className}
-    />
-  );
+  return <TaskNode status={task.status} index={task.index} ring={ring} className={className} />;
 }

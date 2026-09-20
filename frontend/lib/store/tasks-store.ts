@@ -17,7 +17,7 @@ type TasksActions = {
   fetch: () => Promise<void>;
   /** opened -> started */
   start: (taskId: number) => Promise<void>;
-  /** started -> moderation (ручная проверка) | completed (авто-проверка) */
+  /** started -> review (ручная проверка) | completed (авто-проверка) */
   submitAnswer: (taskId: number, answer: string) => Promise<void>;
   /** opened | started -> skipped */
   skip: (taskId: number) => Promise<void>;
@@ -72,6 +72,8 @@ export const useTasksStore = create<TasksState & TasksActions>((set, get) => {
     },
 
     // TODO: POST /tasks/{id}/answer — статус и пояснение приходят от бэкенда.
+    // TODO: по ТЗ ответы на сервер уходят одним запросом, когда собраны ответы на все
+    // вопросы задания (сейчас в моке один ответ = одно задание).
     // В моке любой ответ принимается: авто-задания сразу засчитываются,
     // ручные уходят на модерацию.
     submitAnswer: async (taskId, answer) => {
@@ -81,7 +83,7 @@ export const useTasksStore = create<TasksState & TasksActions>((set, get) => {
 
       await delay(MOCK_LATENCY_MS);
       patchTask(taskId, {
-        status: task.checkType === "auto" ? "completed" : "moderation",
+        status: task.checkType === "auto" ? "completed" : "review",
         finishedAt: new Date().toISOString(),
       });
     },

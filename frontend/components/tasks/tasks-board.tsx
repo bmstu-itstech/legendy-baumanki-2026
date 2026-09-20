@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { Sparkle, Star } from "@/components/ui/decor";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Module, Task, TaskSection, TaskStatus } from "@/lib/types";
 
-import { LiveTaskNode, NODE_OUTER, TaskNode } from "./task-node";
+import { formatOpenAt, isModuleOpen, useNow } from "./module-access";
+import { NODE_OUTER, STAR_OUTER, StarTaskNode, TaskMarker, TaskNode } from "./task-node";
 import { TaskPopover } from "./task-popover";
 import { STATUS_LABEL } from "./task-status";
 
@@ -18,16 +18,26 @@ const panelClass = "rounded-[18px] border-2 border-secondary bg-white";
 const MAP_ROW = 116;
 const MAP_TOP = 92;
 const MAP_BOTTOM = 56;
+/** Расстояние между последним кружком одной группы и первым кружком следующей — в нём линия-разделитель. */
+const GROUP_GAP = 216;
 /** Форма «змейки»: множитель бокового смещения кружка от центра карты. */
 const MAP_WAVE = [0, 0.6, 0.95, 0.6, 0, -0.6, -0.95, -0.6];
 const MAP_MAX_AMPLITUDE = 120;
+/** Изгиб — точка, где змейка ушла к краю почти до максимума: рядом с ней свободный «карман» для звезды. */
+const BEND_WAVE = 0.9;
 
+/** Цвета тропы подобраны под светлый фон страницы. */
 const PATH_DONE = "#12cf9e";
-const PATH_PENDING = "#33444d";
+const PATH_PENDING = "#c3c6e0";
 /** Статусы, после которых команда «прошла» задание, — тропа за ним подсвечивается. */
-const PASSED_STATUSES: TaskStatus[] = ["completed", "skipped", "failed", "moderation"];
+const PASSED_STATUSES: TaskStatus[] = ["completed", "skipped", "failed", "review"];
 
 type Selected = { taskId: number; element: HTMLElement };
+type OnSelect = (task: Task, element: HTMLElement) => void;
+
+/** Раздел модуля (очный / дистанционный) — на карте это условная группа, отделённая линией. */
+type MapGroup = { section: TaskSection; tasks: Task[] };
+type PlacedTask = { task: Task; x: number; y: number };
 
 function useElementWidth<T extends HTMLElement>(fallback: number) {
   const ref = useRef<T | null>(null);
@@ -61,6 +71,25 @@ function ExpandIcon({ open }: { open: boolean }) {
   );
 }
 
+function LockedIcon() {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-secondary/20 text-ink/45"
+    >
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+        <rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" />
+        <path
+          d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
 function ProgressBar({ value, total, label }: { value: number; total: number; label: string }) {
   const percent = total === 0 ? 0 : Math.round((value / total) * 100);
 
@@ -71,7 +100,7 @@ function ProgressBar({ value, total, label }: { value: number; total: number; la
       aria-valuemin={0}
       aria-valuemax={total}
       aria-valuenow={value}
-      className="h-2 w-full overflow-hidden rounded-full bg-mist"
+      className="h-2 w-full overflow-hidden rounded-full bg-ink/10"
     >
       <div
         className="h-full rounded-full bg-secondary transition-[width] duration-500"
@@ -81,29 +110,6 @@ function ProgressBar({ value, total, label }: { value: number; total: number; la
   );
 }
 
-function countCompleted(tasks: Task[]) {
-  return tasks.filter((task) => task.status === "completed").length;
-}
-
-/** Декор по бокам от тропы: синие «таблетки» как на фрейме, искры и звёзды из палитры сайта. */
-function MapDecor({ kind, rotate }: { kind: number; rotate: number }) {
-  switch (kind % 4) {
-    case 0:
-      return (
-        <span
-          className="block h-3 w-9 rounded-full bg-[#2b8cf0]"
-          style={{ transform: `rotate(${rotate}deg)` }}
-        />
-      );
-    case 1:
-      return <Sparkle className="size-7 text-[#fff4b8]" />;
-    case 2:
-      return <Star className="size-8 text-accent" />;
-    default:
-      return <span className="block size-3 rounded-full bg-[#f2a7c3]" />;
-  }
-}
-
 function TaskButton({
   task,
   hidden,
@@ -111,20 +117,29 @@ function TaskButton({
 }: {
   task: Task;
   hidden: boolean;
-  onSelect: (task: Task, element: HTMLElement) => void;
+  onSelect: OnSelect;
 }) {
-  const showRing = task.status === "opened" || task.status === "started";
-  const tag = task.status === "opened" ? "Начать" : task.status === "started" ? "Продолжить" : null;
+  const isSide = task.kind === "side";
+  const showRing = !isSide && (task.status === "opened" || task.status === "started");
+  const tag =
+    isSide || task.status === "closed"
+      ? null
+      : task.status === "opened"
+        ? "Начать"
+        : task.status === "started"
+          ? "Продолжить"
+          : null;
+  const box = isSide ? STAR_OUTER : NODE_OUTER;
 
   return (
     <button
       type="button"
       aria-haspopup="dialog"
-      aria-label={`${task.title}. ${STATUS_LABEL[task.status]}`}
+      aria-label={`${isSide ? "Побочное задание" : "Задание"}: ${task.title}. ${STATUS_LABEL[task.status]}`}
       title={`${task.title}: ${STATUS_LABEL[task.status]}`}
       onClick={(event) => onSelect(task, event.currentTarget)}
       className="relative flex cursor-pointer items-center justify-center rounded-full outline-none transition-transform hover:-translate-y-1 focus-visible:ring-4 focus-visible:ring-accent active:translate-y-0.5"
-      style={{ width: NODE_OUTER, height: NODE_OUTER, visibility: hidden ? "hidden" : undefined }}
+      style={{ width: box, height: box, visibility: hidden ? "hidden" : undefined }}
     >
       {tag ? (
         <span className="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2">
@@ -138,47 +153,148 @@ function TaskButton({
         </span>
       ) : null}
 
-      <LiveTaskNode task={task} ring={showRing} />
+      <TaskMarker task={task} ring={showRing} />
     </button>
   );
 }
 
-function SectionMap({
-  tasks,
+/**
+ * Раскладка карты модуля: основные задания обеих секций идут одной «змейкой»
+ * (в каждой секции волна начинается заново), между секциями — зазор под линию,
+ * а побочные задания расставляются звёздами по «карманам» изгибов.
+ */
+function layoutModuleMap(groups: MapGroup[], sideTasks: Task[], width: number) {
+  const amplitude = Math.max(0, Math.min((width - NODE_OUTER) / 2 - 8, MAP_MAX_AMPLITUDE));
+
+  const segments: { from: PlacedTask; to: PlacedTask; passed: boolean }[] = [];
+  const main: PlacedTask[] = [];
+  const bends: PlacedTask[] = [];
+  const dividers: { y: number; title: string }[] = [];
+  let firstTitle: string | null = null;
+  let cursorY = MAP_TOP;
+  let lastY = MAP_TOP;
+
+  for (const group of groups) {
+    if (group.tasks.length === 0) continue;
+
+    if (main.length === 0) {
+      firstTitle = group.section.title;
+    } else {
+      cursorY = lastY + GROUP_GAP;
+      dividers.push({ y: lastY + GROUP_GAP / 2, title: group.section.title });
+    }
+
+    const placed = group.tasks.map((task, index) => {
+      const wave = MAP_WAVE[index % MAP_WAVE.length];
+      const point = { task, x: width / 2 + amplitude * wave, y: cursorY + index * MAP_ROW };
+
+      if (Math.abs(wave) >= BEND_WAVE) bends.push(point);
+      return point;
+    });
+
+    placed.slice(0, -1).forEach((from, index) => {
+      segments.push({
+        from,
+        to: placed[index + 1],
+        passed: PASSED_STATUSES.includes(from.task.status),
+      });
+    });
+
+    main.push(...placed);
+    lastY = placed[placed.length - 1].y;
+  }
+
+  // Побочные задания — в «карманы» изгибов, равномерно по всей карте. Карман лежит
+  // на пустой стороне змейки: зеркально относительно центра. Если побочек больше,
+  // чем изгибов, добираем по кругу со сдвигом вниз на пол-шага.
+  const pockets = bends.length > 0 ? bends : main;
+  const stars: PlacedTask[] = pockets.length
+    ? sideTasks.map((task, index) => {
+        const slot =
+          sideTasks.length <= pockets.length
+            ? Math.floor((index * pockets.length) / sideTasks.length)
+            : index % pockets.length;
+        const lap = sideTasks.length <= pockets.length ? 0 : Math.floor(index / pockets.length);
+        const bend = pockets[slot];
+        const half = STAR_OUTER / 2 + 4;
+
+        return {
+          task,
+          x: Math.min(Math.max(width - bend.x, half), width - half),
+          y: bend.y + lap * (MAP_ROW / 2),
+        };
+      })
+    : [];
+
+  return {
+    main,
+    stars,
+    segments,
+    dividers,
+    firstTitle,
+    height: lastY + NODE_OUTER / 2 + MAP_BOTTOM,
+  };
+}
+
+function FormatLabel({ children }: { children: string }) {
+  return (
+    <span className="rounded-full bg-ink px-3 py-1 text-[0.8125rem] font-bold uppercase leading-5 text-white">
+      {children}
+    </span>
+  );
+}
+
+function ModuleMap({
+  groups,
+  sideTasks,
   selectedId,
   onSelect,
 }: {
-  tasks: Task[];
+  groups: MapGroup[];
+  sideTasks: Task[];
   selectedId: number | null;
-  onSelect: (task: Task, element: HTMLElement) => void;
+  onSelect: OnSelect;
 }) {
   const [ref, width] = useElementWidth<HTMLDivElement>(360);
+  const layout = layoutModuleMap(groups, sideTasks, width);
 
-  const amplitude = Math.max(0, Math.min((width - NODE_OUTER) / 2 - 8, MAP_MAX_AMPLITUDE));
-  const points = tasks.map((_, index) => ({
-    x: width / 2 + amplitude * MAP_WAVE[index % MAP_WAVE.length],
-    y: MAP_TOP + index * MAP_ROW,
-  }));
-  const height = MAP_TOP + Math.max(0, tasks.length - 1) * MAP_ROW + NODE_OUTER / 2 + MAP_BOTTOM;
-  const showDecor = width >= 280;
+  if (layout.main.length === 0 && layout.stars.length === 0) {
+    return <p className="mt-6 text-[1rem] text-ink/70">В этом модуле пока нет заданий.</p>;
+  }
 
   return (
-    <div ref={ref} className="relative mx-auto w-full max-w-[460px]" style={{ height }}>
+    <div
+      ref={ref}
+      className="relative mx-auto mt-4 w-full max-w-[460px]"
+      style={{ height: layout.height }}
+    >
       <svg
         aria-hidden="true"
         width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
+        height={layout.height}
+        viewBox={`0 0 ${width} ${layout.height}`}
         className="pointer-events-none absolute inset-0"
       >
-        {points.slice(0, -1).map((from, index) => {
-          const to = points[index + 1];
+        {layout.dividers.map((divider) => (
+          <line
+            key={divider.y}
+            x1={0}
+            x2={width}
+            y1={divider.y}
+            y2={divider.y}
+            stroke="currentColor"
+            strokeOpacity={0.25}
+            strokeWidth={2}
+            className="text-ink"
+          />
+        ))}
+
+        {layout.segments.map(({ from, to, passed }) => {
           const middle = (from.y + to.y) / 2;
-          const passed = PASSED_STATUSES.includes(tasks[index].status);
 
           return (
             <path
-              key={tasks[index].id}
+              key={from.task.id}
               d={`M ${from.x} ${from.y} C ${from.x} ${middle}, ${to.x} ${middle}, ${to.x} ${to.y}`}
               fill="none"
               stroke={passed ? PATH_DONE : PATH_PENDING}
@@ -190,148 +306,98 @@ function SectionMap({
         })}
       </svg>
 
-      {showDecor
-        ? points.map((point, index) => {
-            if (index % 2 === 0) return null;
+      {layout.firstTitle ? (
+        <span className="pointer-events-none absolute top-0 left-0">
+          <FormatLabel>{layout.firstTitle}</FormatLabel>
+        </span>
+      ) : null}
 
-            // Декор ставим с противоположной от кружка стороны.
-            const onLeft = point.x > width / 2;
-            const inset = 22 + (index % 3) * 12;
-
-            return (
-              <span
-                key={tasks[index].id}
-                aria-hidden="true"
-                className="pointer-events-none absolute opacity-80"
-                style={{
-                  top: point.y + ((index % 3) - 1) * 16,
-                  ...(onLeft ? { left: inset } : { right: inset }),
-                }}
-              >
-                <MapDecor kind={index >> 1} rotate={index % 2 === 0 ? -24 : 28} />
-              </span>
-            );
-          })
-        : null}
-
-      {tasks.map((task, index) => (
-        <div
-          key={task.id}
-          className="absolute"
-          style={{ left: points[index].x - NODE_OUTER / 2, top: points[index].y - NODE_OUTER / 2 }}
+      {layout.dividers.map((divider) => (
+        <span
+          key={divider.y}
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ top: divider.y }}
         >
-          <TaskButton task={task} hidden={selectedId === task.id} onSelect={onSelect} />
-        </div>
+          <FormatLabel>{divider.title}</FormatLabel>
+        </span>
       ))}
+
+      {[...layout.main, ...layout.stars].map(({ task, x, y }) => {
+        const box = task.kind === "side" ? STAR_OUTER : NODE_OUTER;
+
+        return (
+          <div key={task.id} className="absolute" style={{ left: x - box / 2, top: y - box / 2 }}>
+            <TaskButton task={task} hidden={selectedId === task.id} onSelect={onSelect} />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function SectionBlock({
-  section,
-  tasks,
+function countCompleted(tasks: Task[]) {
+  return tasks.filter((task) => task.status === "completed").length;
+}
+
+function ModuleSection({
+  module,
+  groups,
+  sideTasks,
+  locked,
   open,
   selectedId,
   onToggle,
   onSelectTask,
 }: {
-  section: TaskSection;
-  tasks: Task[];
+  module: Module;
+  groups: MapGroup[];
+  sideTasks: Task[];
+  /** Модуль ещё не открылся (`openAt` в будущем) — задания недоступны. */
+  locked: boolean;
   open: boolean;
   selectedId: number | null;
   onToggle: () => void;
-  onSelectTask: (task: Task, element: HTMLElement) => void;
+  onSelectTask: OnSelect;
 }) {
-  const completed = countCompleted(tasks);
+  // Агрегат по основным заданиям модуля — побочные идут в отдельный зачёт.
+  const mainTasks = groups.flatMap((group) => group.tasks);
+  const completedCount = countCompleted(mainTasks);
+
+  if (locked) {
+    return (
+      <section aria-label={module.name} className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[1.5rem] font-bold uppercase text-ink/45 sm:text-[1.75rem]">
+            {module.name}
+          </h2>
+          <p className="mt-1 text-[0.875rem] text-ink/60">
+            Откроется {formatOpenAt(module.openAt)}
+          </p>
+        </div>
+        <LockedIcon />
+      </section>
+    );
+  }
 
   return (
-    <div className="overflow-hidden rounded-[14px] border-2 border-secondary/15 bg-mist/50">
+    <section aria-label={module.name}>
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3.5 text-left"
-        aria-expanded={open}
-      >
-        <span className="min-w-0">
-          <span className="block text-[1.0625rem] font-bold uppercase text-ink">{section.title}</span>
-          <span className="mt-0.5 block text-[0.8125rem] text-ink/55">
-            Выполнено {completed} из {tasks.length}
-          </span>
-        </span>
-        <ExpandIcon open={open} />
-      </button>
-
-      {open ? (
-        <div className="border-t-2 border-secondary/10 p-3 sm:p-4">
-          <div
-            className="relative overflow-hidden rounded-[14px] px-3 py-5 sm:px-6"
-            style={{
-              backgroundColor: "#101c22",
-              backgroundImage:
-                "radial-gradient(120% 55% at 50% 0%, rgb(18 207 158 / 0.16), transparent 60%), radial-gradient(90% 45% at 50% 100%, rgb(74 78 140 / 0.4), transparent 70%)",
-            }}
-          >
-            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.8125rem] font-bold uppercase leading-5 text-white/80">
-              Пройдено {completed} из {tasks.length}
-            </span>
-
-            <SectionMap tasks={tasks} selectedId={selectedId} onSelect={onSelectTask} />
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ModuleCard({
-  module,
-  sections,
-  tasksBySection,
-  open,
-  openSections,
-  selectedId,
-  onToggleModule,
-  onToggleSection,
-  onSelectTask,
-}: {
-  module: Module;
-  sections: TaskSection[];
-  tasksBySection: Map<number, Task[]>;
-  open: boolean;
-  openSections: Set<number>;
-  selectedId: number | null;
-  onToggleModule: () => void;
-  onToggleSection: (sectionId: number) => void;
-  onSelectTask: (task: Task, element: HTMLElement) => void;
-}) {
-  const completedCount = sections.reduce(
-    (count, section) => count + countCompleted(tasksBySection.get(section.id) ?? []),
-    0,
-  );
-  const totalCount = sections.reduce(
-    (count, section) => count + (tasksBySection.get(section.id) ?? []).length,
-    0,
-  );
-
-  return (
-    <article className={panelClass}>
-      <button
-        type="button"
-        onClick={onToggleModule}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
+        className="flex w-full cursor-pointer items-center justify-between gap-4 text-left"
         aria-expanded={open}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[1.25rem] font-bold uppercase text-ink sm:text-[1.5rem]">
+          <span className="block text-[1.5rem] font-bold uppercase text-ink sm:text-[1.75rem]">
             {module.name}
           </span>
-          <span className="mt-1 block text-[0.875rem] text-ink/55">
-            Выполнено {completedCount} из {totalCount}
+          <span className="mt-1 block text-[0.875rem] text-ink/60">
+            Выполнено {completedCount} из {mainTasks.length}
           </span>
           <span className="mt-3 block max-w-[320px]">
             <ProgressBar
               value={completedCount}
-              total={totalCount}
+              total={mainTasks.length}
               label={`Прогресс модуля «${module.name}»`}
             />
           </span>
@@ -340,21 +406,14 @@ function ModuleCard({
       </button>
 
       {open ? (
-        <div className="flex flex-col gap-4 border-t-2 border-secondary/10 px-4 py-4 sm:px-6 sm:py-5">
-          {sections.map((section) => (
-            <SectionBlock
-              key={section.id}
-              section={section}
-              tasks={tasksBySection.get(section.id) ?? []}
-              open={openSections.has(section.id)}
-              selectedId={selectedId}
-              onToggle={() => onToggleSection(section.id)}
-              onSelectTask={onSelectTask}
-            />
-          ))}
-        </div>
+        <ModuleMap
+          groups={groups}
+          sideTasks={sideTasks}
+          selectedId={selectedId}
+          onSelect={onSelectTask}
+        />
       ) : null}
-    </article>
+    </section>
   );
 }
 
@@ -370,19 +429,31 @@ function StatusLegend() {
           </li>
         ))}
       </ul>
+
+      <p className="mt-4 flex items-center gap-3 border-t-2 border-secondary/10 pt-4 text-[0.875rem] text-ink/75">
+        <StarTaskNode status="opened" size={26} className="mb-0.5" />
+        Побочное задание
+      </p>
     </div>
   );
 }
 
-function RulesPanel(): ReactNode {
+function RulesPanel() {
   return (
     <aside className={`${panelClass} order-first p-5 xl:order-none xl:sticky xl:top-16 xl:self-start`}>
       <h2 className="text-[1.25rem] font-bold uppercase text-ink">Правила</h2>
       <div className="mt-4 space-y-3 text-[0.9375rem] leading-6 text-ink/75">
-        <p>Открывайте модули, выбирайте формат участия и проходите задания по порядку.</p>
+        <p>
+          Открывайте модули и проходите задания в любом порядке: очные и дистанционные задания
+          решаются параллельно.
+        </p>
         <p>
           Кружок показывает статус задания: закрыто, открыто, в процессе, на проверке, выполнено,
           пропущено или не принято. Нажмите на кружок, чтобы открыть задание.
+        </p>
+        <p>
+          Звёзды в изгибах пути — побочные задания. Они не обязательны, а результаты по ним идут в
+          отдельный рейтинг.
         </p>
         <p>
           Очные задания выполняются на площадке, дистанционные можно проходить онлайн. После
@@ -419,9 +490,9 @@ export function TasksBoard() {
   const error = useTasksStore((state) => state.error);
   const fetchTasks = useTasksStore((state) => state.fetch);
   const [openModuleIds, setOpenModuleIds] = useState<Set<number>>(() => new Set([1]));
-  const [openSectionIds, setOpenSectionIds] = useState<Set<number>>(() => new Set([11]));
   const [selected, setSelected] = useState<Selected | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const now = useNow();
 
   useEffect(() => {
     fetchTasks();
@@ -432,19 +503,30 @@ export function TasksBoard() {
     if (selected === null) triggerRef.current?.focus({ preventScroll: true });
   }, [selected]);
 
-  const tasksBySection = useMemo(() => {
-    const groupedTasks = new Map<number, Task[]>();
+  // На карту каждого модуля: основные задания по разделам + побочные (звёзды).
+  const mapsByModule = useMemo(() => {
+    const sectionModule = new Map(sections.map((section) => [section.id, section.moduleId]));
+    const maps = new Map<number, { groups: MapGroup[]; sideTasks: Task[] }>();
 
-    for (const task of tasks) {
-      const list = groupedTasks.get(task.sectionId) ?? [];
-      list.push(task);
-      groupedTasks.set(task.sectionId, list);
+    for (const moduleItem of modules) {
+      maps.set(moduleItem.id, {
+        groups: sections
+          .filter((section) => section.moduleId === moduleItem.id)
+          .sort((a, b) => a.order - b.order)
+          .map((section) => ({
+            section,
+            tasks: tasks.filter((task) => task.sectionId === section.id && task.kind === "main"),
+          })),
+        sideTasks: tasks.filter(
+          (task) => task.kind === "side" && sectionModule.get(task.sectionId) === moduleItem.id,
+        ),
+      });
     }
 
-    return groupedTasks;
-  }, [tasks]);
+    return maps;
+  }, [modules, sections, tasks]);
 
-  const handleSelectTask = (task: Task, element: HTMLElement) => {
+  const handleSelectTask: OnSelect = (task, element) => {
     triggerRef.current = element;
     setSelected({ taskId: task.id, element });
   };
@@ -473,24 +555,21 @@ export function TasksBoard() {
 
   return (
     <>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="flex flex-col gap-5">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex flex-col gap-10">
           {modules
             .slice()
             .sort((a, b) => a.order - b.order)
             .map((module) => (
-              <ModuleCard
+              <ModuleSection
                 key={module.id}
                 module={module}
-                sections={sections
-                  .filter((section) => section.moduleId === module.id)
-                  .sort((a, b) => a.order - b.order)}
-                tasksBySection={tasksBySection}
+                groups={mapsByModule.get(module.id)?.groups ?? []}
+                sideTasks={mapsByModule.get(module.id)?.sideTasks ?? []}
+                locked={!isModuleOpen(module, now)}
                 open={openModuleIds.has(module.id)}
-                openSections={openSectionIds}
                 selectedId={selected?.taskId ?? null}
-                onToggleModule={() => toggleInSet(setOpenModuleIds, module.id)}
-                onToggleSection={(sectionId) => toggleInSet(setOpenSectionIds, sectionId)}
+                onToggle={() => toggleInSet(setOpenModuleIds, module.id)}
                 onSelectTask={handleSelectTask}
               />
             ))}
@@ -503,7 +582,6 @@ export function TasksBoard() {
         <TaskPopover
           key={selectedTask.id}
           task={selectedTask}
-          total={tasksBySection.get(selectedTask.sectionId)?.length ?? 1}
           anchorEl={selected.element}
           onClose={handleClosePopover}
         />

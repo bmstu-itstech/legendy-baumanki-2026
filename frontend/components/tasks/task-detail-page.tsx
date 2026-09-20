@@ -8,6 +8,7 @@ import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskMedia } from "@/lib/types";
 
+import { formatOpenAt, isModuleOpen, useNow } from "./module-access";
 import { TaskStatusBadge } from "./task-status-badge";
 import { useElapsedSeconds } from "./use-elapsed";
 
@@ -142,12 +143,6 @@ function TimerPanel({ task }: { task: Task }) {
       <p className="mt-2 text-[0.875rem] text-ink/60">{caption}</p>
 
       <dl className="mt-4 space-y-1.5 border-t border-ink/10 pt-4 text-[0.9375rem] text-ink/70">
-        {task.timeLimitSec ? (
-          <div className="flex justify-between gap-3">
-            <dt>Лимит времени</dt>
-            <dd className="font-bold text-ink">{Math.round(task.timeLimitSec / 60)} мин</dd>
-          </div>
-        ) : null}
         <div className="flex justify-between gap-3">
           <dt>Баллы</dt>
           <dd className="font-bold text-ink">{task.points}</dd>
@@ -183,9 +178,9 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
   const { status } = task;
   const busy = pending !== null;
   const showAssignment =
-    status === "started" || status === "moderation" || status === "completed" || status === "failed";
+    status === "started" || status === "review" || status === "completed" || status === "failed";
   const canSkip = status === "opened" || status === "started";
-  const isFinal = status === "completed" || status === "skipped" || status === "failed" || status === "moderation";
+  const isFinal = status === "completed" || status === "skipped" || status === "failed" || status === "review";
 
   async function run(action: PendingAction, fn: () => Promise<void>) {
     setPending(action);
@@ -319,7 +314,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
             </div>
           ) : null}
 
-          {status === "moderation" ? (
+          {status === "review" ? (
             <div className="mt-6">
               <Notice tone="info">
                 Ваш ответ отправлен и находится на проверке. Результат появится здесь после
@@ -432,6 +427,7 @@ export function TaskDetailPage({ taskId }: { taskId: number }) {
   const status = useTasksStore((state) => state.status);
   const error = useTasksStore((state) => state.error);
   const fetchTasks = useTasksStore((state) => state.fetch);
+  const now = useNow();
 
   useEffect(() => {
     fetchTasks();
@@ -465,6 +461,22 @@ export function TaskDetailPage({ taskId }: { taskId: number }) {
     );
   }
 
+  const section = sections.find((item) => item.id === task.sectionId);
+  const parentModule = modules.find((item) => item.id === section?.moduleId);
+
+  // Модули открываются постепенно: ссылку на задание ещё не открытого модуля не показываем.
+  if (parentModule && !isModuleOpen(parentModule, now)) {
+    return (
+      <StateCard>
+        <h1 className="text-[1.375rem] font-bold uppercase text-ink sm:text-h3">
+          {parentModule.name}
+        </h1>
+        <p>Модуль откроется {formatOpenAt(parentModule.openAt)} — тогда станут доступны его задания.</p>
+        <BackLink />
+      </StateCard>
+    );
+  }
+
   if (task.status === "closed") {
     return (
       <StateCard>
@@ -474,9 +486,6 @@ export function TaskDetailPage({ taskId }: { taskId: number }) {
       </StateCard>
     );
   }
-
-  const section = sections.find((item) => item.id === task.sectionId);
-  const parentModule = modules.find((item) => item.id === section?.moduleId);
 
   return <TaskView key={task.id} task={task} moduleName={parentModule?.name ?? "Задания"} />;
 }
