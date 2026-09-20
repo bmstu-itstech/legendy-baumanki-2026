@@ -120,19 +120,47 @@ export type TaskSection = {
   tasksCount: number;
 };
 
+export type TaskMediaType = "image" | "video" | "audio";
+
+export type TaskMedia = {
+  id: number;
+  type: TaskMediaType;
+  url: string;
+  /** Подпись / alt-текст. */
+  caption: string | null;
+};
+
 export type Task = {
   id: number;
   sectionId: number;
   /** Номер задания в кружочке на карте раздела. */
   index: number;
   title: string;
+  /** Общее описание — видно, пока задание не начато. */
   description: string;
-  imageUrl: string | null;
+  /** Текст самого задания (блок «Задание») — показываем после старта. */
+  assignment: string;
+  /** Фото / видео / аудио к заданию, от 0 до 4 штук. */
+  media: TaskMedia[];
+  /** Подпись над полем ответа. */
+  answerLabel: string;
+  /**
+   * Регулярка от бэка для проверки формата ответа на клиенте (если задана).
+   * Трактуется как полное совпадение — как атрибут `pattern` у input.
+   */
+  answerPattern: string | null;
+  /**
+   * Текст-пояснение. Открывается только после успешного выполнения —
+   * настоящий бэкенд не должен отдавать его раньше.
+   */
+  explanation: string | null;
   checkType: TaskCheckType;
   timeLimitSec: number | null;
   points: number;
   status: TaskStatus;
   startedAt: string | null;
+  /** Когда команда закончила (отправила ответ / получила результат) — замораживает таймер. */
+  finishedAt: string | null;
 };
 
 export type RatingTaskScore = {

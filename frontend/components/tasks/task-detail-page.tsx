@@ -1,149 +1,505 @@
-const mediaNotes = ["0..4 медиа", "Медиа:\nФото,\nВидео,\nАудио"];
+"use client";
 
-export function TaskDetailPage() {
+import Link from "next/link";
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+
+import { Modal } from "@/components/ui/modal";
+import { useTasksStore } from "@/lib/store/tasks-store";
+import type { Task, TaskMedia } from "@/lib/types";
+
+import { TaskStatusBadge } from "./task-status-badge";
+
+const cardClass = "rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9";
+
+const primaryButtonClass =
+  "h-12 cursor-pointer rounded-[14px] bg-ink px-8 font-hand text-[1.125rem] uppercase text-white transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryButtonClass =
+  "h-12 cursor-pointer rounded-[14px] border border-ink px-8 font-hand text-[1.125rem] uppercase text-ink transition-colors hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-60";
+
+type PendingAction = "start" | "submit" | "skip";
+
+function formatTaskNumber(id: number) {
+  return `#${String(id).padStart(4, "0")}`;
+}
+
+function formatDuration(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+/** Секунды от старта задания: тикает, пока задание в процессе, и замирает после завершения. */
+function useElapsedSeconds(startedAt: string | null, finishedAt: string | null) {
+  const running = startedAt !== null && finishedAt === null;
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  if (!startedAt) return null;
+
+  const end = finishedAt ? new Date(finishedAt).getTime() : now;
+  return Math.max(0, Math.floor((end - new Date(startedAt).getTime()) / 1000));
+}
+
+/** Формат ответа проверяем регуляркой от бэка (полное совпадение, как у атрибута pattern). */
+function validateAnswer(value: string, pattern: string | null) {
+  const trimmed = value.trim();
+  if (!trimmed) return "Введите ответ";
+
+  if (pattern) {
+    try {
+      if (!new RegExp(`^(?:${pattern})$`).test(trimmed)) {
+        return "Ответ не соответствует ожидаемому формату";
+      }
+    } catch {
+      // Регулярку от бэка не удалось разобрать в JS — решение за сервером.
+    }
+  }
+
+  return null;
+}
+
+function Notice({
+  tone,
+  children,
+}: {
+  tone: "info" | "success" | "error";
+  children: ReactNode;
+}) {
+  const toneClass = {
+    info: "border-secondary/40 bg-mist",
+    success: "border-success bg-success/15",
+    error: "border-error bg-error/10",
+  }[tone];
+
   return (
-    <div className="mx-auto max-w-[1180px] px-2 py-6 sm:px-6 lg:px-10">
-      <div className="mb-4 text-[0.9rem] font-bold uppercase tracking-[-0.03em] text-[#1d2532]">
-        <span>Название модуля</span>
-        <span className="px-2">&rarr;</span>
-        <span>Задание #0123</span>
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={`rounded-[12px] border-2 px-4 py-3 text-[1rem] leading-6 text-ink ${toneClass}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function MediaItem({ item, single }: { item: TaskMedia; single: boolean }) {
+  const frameClass = "overflow-hidden rounded-[12px] border-2 border-ink/10 bg-mist";
+
+  if (item.type === "image") {
+    return (
+      <figure className={frameClass}>
+        {/* Медиа приходят с бэкенда с произвольных адресов — next/image здесь не подходит. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={item.url}
+          alt={item.caption ?? "Иллюстрация к заданию"}
+          loading="lazy"
+          className={`w-full object-cover ${single ? "max-h-[420px]" : "aspect-[4/3]"}`}
+        />
+      </figure>
+    );
+  }
+
+  if (item.type === "video") {
+    return (
+      <div className={frameClass}>
+        <video controls preload="metadata" src={item.url} className="w-full bg-ink">
+          <track kind="captions" />
+        </video>
       </div>
+    );
+  }
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start">
-        <main className="min-w-0">
-          <h1 className="font-hand text-[clamp(2.4rem,4vw,4.2rem)] leading-[0.9] tracking-[-0.04em] text-[#f1a9b3]">
-            Название задания
-          </h1>
+  return (
+    <div className={`${frameClass} flex flex-col justify-center gap-2 p-3`}>
+      {item.caption ? <span className="text-[0.875rem] text-ink/70">{item.caption}</span> : null}
+      <audio controls preload="metadata" src={item.url} className="w-full" />
+    </div>
+  );
+}
 
-          <div className="mt-6 max-w-[720px] space-y-6">
-            <p className="text-[1.15rem] leading-[1.6] text-[#1d2532]/80">
-              Описание задания. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliquam quaerat voluptate. Ut
-              enim adque doloremus, cum corpore dolus, fiei tamen per magna accession potest, si
-              aliquo adternum et.
-            </p>
+function MediaGrid({ media }: { media: TaskMedia[] }) {
+  if (media.length === 0) return null;
 
-            <section>
-              <h2 className="text-[2.5rem] font-bold uppercase leading-none tracking-[-0.04em] text-[#1d2532]">
+  return (
+    <div className={`mt-5 grid gap-3 ${media.length > 1 ? "sm:grid-cols-2" : ""}`}>
+      {media.map((item) => (
+        <MediaItem key={item.id} item={item} single={media.length === 1} />
+      ))}
+    </div>
+  );
+}
+
+function TimerPanel({ task }: { task: Task }) {
+  const elapsed = useElapsedSeconds(task.startedAt, task.finishedAt);
+
+  let timerText = "—";
+  let caption = "Задание не запускалось";
+
+  if (task.status === "opened") {
+    timerText = formatDuration(0);
+    caption = "Отсчёт начнётся после старта";
+  } else if (elapsed !== null) {
+    timerText = formatDuration(elapsed);
+    caption = task.finishedAt ? "Время зафиксировано" : "Идёт отсчёт";
+  }
+
+  return (
+    <aside className="order-first rounded-[18px] border-2 border-secondary bg-white p-5 xl:order-none xl:sticky xl:top-16 xl:self-start">
+      <h2 className="text-[1rem] font-bold uppercase leading-tight text-ink">
+        Время выполнения задания
+      </h2>
+
+      <p
+        className="mt-3 text-[2.25rem] font-bold leading-none tabular-nums text-ink"
+        aria-live="off"
+      >
+        {timerText}
+      </p>
+      <p className="mt-2 text-[0.875rem] text-ink/60">{caption}</p>
+
+      <dl className="mt-4 space-y-1.5 border-t border-ink/10 pt-4 text-[0.9375rem] text-ink/70">
+        {task.timeLimitSec ? (
+          <div className="flex justify-between gap-3">
+            <dt>Лимит времени</dt>
+            <dd className="font-bold text-ink">{Math.round(task.timeLimitSec / 60)} мин</dd>
+          </div>
+        ) : null}
+        <div className="flex justify-between gap-3">
+          <dt>Баллы</dt>
+          <dd className="font-bold text-ink">{task.points}</dd>
+        </div>
+      </dl>
+    </aside>
+  );
+}
+
+function BackLink() {
+  return (
+    <Link
+      href="/profile/tasks"
+      className="inline-flex text-[1rem] font-bold uppercase text-ink underline-offset-4 hover:underline"
+    >
+      ← К заданиям
+    </Link>
+  );
+}
+
+function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
+  const start = useTasksStore((state) => state.start);
+  const submitAnswer = useTasksStore((state) => state.submitAnswer);
+  const skip = useTasksStore((state) => state.skip);
+
+  const answerId = useId();
+  const [answer, setAnswer] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
+
+  const { status } = task;
+  const busy = pending !== null;
+  const showAssignment =
+    status === "started" || status === "moderation" || status === "completed" || status === "failed";
+  const canSkip = status === "opened" || status === "started";
+  const isFinal = status === "completed" || status === "skipped" || status === "failed" || status === "moderation";
+
+  async function run(action: PendingAction, fn: () => Promise<void>) {
+    setPending(action);
+    setActionError(null);
+    try {
+      await fn();
+      return true;
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Не удалось выполнить действие");
+      return false;
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const error = validateAnswer(answer, task.answerPattern);
+    setFieldError(error);
+    if (error) return;
+
+    await run("submit", () => submitAnswer(task.id, answer.trim()));
+  }
+
+  async function handleSkipConfirm() {
+    const ok = await run("skip", () => skip(task.id));
+    if (ok) setSkipConfirmOpen(false);
+  }
+
+  return (
+    <>
+      <nav aria-label="Навигация по заданию" className="text-[0.9375rem] text-ink/60">
+        <Link href="/profile/tasks" className="underline-offset-4 hover:underline">
+          {moduleName}
+        </Link>
+        <span aria-hidden="true" className="px-2">
+          ›
+        </span>
+        <span aria-current="page" className="text-ink">
+          Задание {formatTaskNumber(task.id)}
+        </span>
+      </nav>
+
+      <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
+        <article className={cardClass}>
+          <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <h1 className="min-w-0 text-[1.375rem] font-bold uppercase text-ink sm:text-h3">
+              {task.title}
+            </h1>
+            <TaskStatusBadge status={status} />
+          </header>
+
+          <p className="mt-4 text-[1.0625rem] leading-7 text-ink/75">{task.description}</p>
+
+          {showAssignment ? (
+            <section aria-labelledby={`${answerId}-assignment`} className="mt-8 border-t border-ink/10 pt-6">
+              <h2
+                id={`${answerId}-assignment`}
+                className="text-[1.25rem] font-bold uppercase text-ink sm:text-[1.375rem]"
+              >
                 Задание
               </h2>
-              <p className="mt-4 max-w-[720px] text-[1.05rem] leading-[1.7] text-[#1d2532]/80">
-                Описание задания. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliquam quaerat voluptate.
-              </p>
-            </section>
+              <p className="mt-3 text-[1.0625rem] leading-7 text-ink/75">{task.assignment}</p>
 
-            <div className="mt-2 flex flex-wrap items-start gap-4">
-              <div className="w-full max-w-[560px] overflow-hidden rounded-[4px] border-[3px] border-[#0d1c2c] bg-[#dfe9f5] shadow-[0_0_0_2px_rgba(13,28,44,0.05)]">
-                <img
-                  src="https://images.unsplash.com/photo-1528747045269-390fe33c19f2?auto=format&fit=crop&w=1200&q=80"
-                  alt="Задание"
-                  className="block h-[260px] w-full object-cover"
-                />
-              </div>
+              <MediaGrid media={task.media} />
 
-              <div className="flex flex-col gap-3">
-                {mediaNotes.map((note, index) => (
-                  <div
-                    key={note}
-                    className="w-[125px] rounded-[4px] border-[1px] border-[#1d2532]/30 bg-[#f5df8c] px-3 py-2 text-[0.9rem] leading-[1.1] text-[#1d2532] shadow-[0_2px_0_rgba(0,0,0,0.10)]"
-                    style={{ transform: index === 0 ? "translateY(8px)" : "none" }}
-                  >
-                    {note.split("\n").map((line) => (
-                      <div key={line}>{line}</div>
-                    ))}
+              {status === "started" ? (
+                <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-2">
+                  <label htmlFor={answerId} className="text-[0.9375rem] font-bold text-ink">
+                    {task.answerLabel}
+                  </label>
+                  <input
+                    id={answerId}
+                    type="text"
+                    autoComplete="off"
+                    value={answer}
+                    disabled={busy}
+                    aria-invalid={fieldError ? true : undefined}
+                    aria-describedby={fieldError ? `${answerId}-error` : undefined}
+                    onChange={(event) => {
+                      setAnswer(event.target.value);
+                      if (fieldError) setFieldError(null);
+                    }}
+                    className={`h-12 w-full max-w-[440px] rounded-full bg-mist px-5 text-[1.0625rem] font-medium text-ink outline-none ring-2 transition-shadow placeholder:text-ink/40 focus-visible:ring-secondary disabled:opacity-60 ${
+                      fieldError ? "ring-error" : "ring-transparent"
+                    }`}
+                  />
+                  {fieldError ? (
+                    <p id={`${answerId}-error`} role="alert" className="text-[0.875rem] text-error">
+                      {fieldError}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button type="submit" disabled={busy} className={primaryButtonClass}>
+                      {pending === "submit" ? "Отправляем…" : "Отправить"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setSkipConfirmOpen(true)}
+                      className={secondaryButtonClass}
+                    >
+                      Пропустить
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
+                </form>
+              ) : null}
+            </section>
+          ) : null}
 
-            <div className="mt-8 flex flex-wrap items-end gap-5">
-              <div className="min-w-[200px] flex-1 max-w-[420px]">
-                <div className="mb-2 text-[0.95rem] font-bold uppercase text-[#1d2532]">Ответ</div>
-                <input
-                  type="text"
-                  placeholder=""
-                  className="w-full border-[2px] border-[#1d2532] bg-transparent px-4 py-3 text-[1.1rem] text-[#1d2532] outline-none placeholder:text-[#1d2532]/40"
-                />
-              </div>
-
-              <div className="w-[138px] rounded-[4px] border-[1px] border-[#1d2532]/20 bg-[#f5df8c] px-3 py-2 text-[0.9rem] leading-[1.2] text-[#1d2532] shadow-[0_2px_0_rgba(0,0,0,0.10)]">
-                Регулярка
-                <div className="mt-1">(если есть)</div>
-                <div className="mt-1">с бока</div>
-              </div>
-            </div>
-
-            <div className="mt-8 max-w-[720px] text-[1.05rem] leading-[1.7] text-[#1d2532]/80">
-              <span className="font-bold">Текст-пояснение.</span> Lorem ipsum dolor sit amet,
-              consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-              magna aliquam quaerat voluptate.
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+          {status === "opened" ? (
+            <div className="mt-8 flex flex-wrap gap-3 border-t border-ink/10 pt-6">
               <button
                 type="button"
-                className="min-w-[170px] border-[2px] border-[#1d2532] bg-transparent px-6 py-3 text-[1.05rem] font-bold uppercase text-[#1d2532] transition hover:-translate-y-0.5"
+                disabled={busy}
+                onClick={() => run("start", () => start(task.id))}
+                className={primaryButtonClass}
               >
-                Отправить
+                {pending === "start" ? "Запускаем…" : "Начать"}
               </button>
               <button
                 type="button"
-                className="min-w-[170px] border-[2px] border-[#1d2532] bg-transparent px-6 py-3 text-[1.05rem] font-bold uppercase text-[#1d2532] transition hover:-translate-y-0.5"
+                disabled={busy}
+                onClick={() => setSkipConfirmOpen(true)}
+                className={secondaryButtonClass}
               >
                 Пропустить
               </button>
             </div>
-          </div>
-        </main>
+          ) : null}
 
-        <aside className="space-y-6 pt-2 xl:pt-16">
-          <div className="rounded-[6px] border-[1px] border-[#1d2532]/10 bg-[#f7f7f5] px-4 py-3 shadow-[0_2px_0_rgba(0,0,0,0.06)]">
-            <div className="text-[0.9rem] font-bold uppercase leading-tight text-[#1d2532]/75">
-              Время выполнения задан...
+          {status === "moderation" ? (
+            <div className="mt-6">
+              <Notice tone="info">
+                Ваш ответ отправлен и находится на проверке. Результат появится здесь после
+                проверки модератором.
+              </Notice>
             </div>
-            <div className="mt-4 text-center text-[2.1rem] font-bold tracking-[-0.05em] text-[#1d2532]">
-              0:10:34
+          ) : null}
+
+          {status === "failed" ? (
+            <div className="mt-6">
+              <Notice tone="error">Ответ не принят — баллы за это задание не начислены.</Notice>
             </div>
-            <div className="mt-4 flex gap-3">
-              <div className="flex-1 rounded-[4px] border border-[#1d2532]/15 bg-[#f4df8b] px-3 py-2 text-center text-[0.7rem] font-bold uppercase leading-[1.2] text-[#1d2532]">
-                <div>Текущее</div>
-                <div>время</div>
-                <div>выполнения</div>
-                <div>задания</div>
-              </div>
-              <div className="flex-1 rounded-[4px] border border-[#1d2532]/15 bg-[#f2c7bb] px-3 py-2 text-center text-[0.7rem] font-bold uppercase leading-[1.2] text-[#1d2532]">
-                <div>Перенести</div>
-                <div>в другое</div>
-                <div>место</div>
-              </div>
+          ) : null}
+
+          {status === "skipped" ? (
+            <div className="mt-6">
+              <Notice tone="info">Вы пропустили это задание — баллы за него не начисляются.</Notice>
             </div>
-          </div>
+          ) : null}
 
-          <div className="rounded-[4px] border-[1px] border-[#1d2532]/15 bg-[#f4df8b] px-3 py-2 text-[0.74rem] leading-[1.4] text-[#1d2532] shadow-[0_2px_0_rgba(0,0,0,0.10)]">
-            <div className="font-bold uppercase">Отметить</div>
-            <div>если задача</div>
-            <div>не нужна</div>
-          </div>
+          {status === "completed" ? (
+            <div className="mt-6 flex flex-col gap-5">
+              <Notice tone="success">Задание выполнено! Начислено баллов: {task.points}.</Notice>
 
-          <div className="rounded-[4px] border-[1px] border-[#1d2532]/15 bg-[#f4df8b] px-3 py-2 text-[0.74rem] leading-[1.4] text-[#1d2532] shadow-[0_2px_0_rgba(0,0,0,0.10)]">
-            <div className="font-bold uppercase">Если статус</div>
-            <div>кнопки</div>
-            <div>неактивен</div>
-          </div>
+              {task.explanation ? (
+                <section aria-labelledby={`${answerId}-explanation`}>
+                  <h2
+                    id={`${answerId}-explanation`}
+                    className="text-[1.0625rem] font-bold uppercase text-ink"
+                  >
+                    Пояснение
+                  </h2>
+                  <p className="mt-2 text-[1.0625rem] leading-7 text-ink/75">{task.explanation}</p>
+                </section>
+              ) : null}
+            </div>
+          ) : null}
 
-          <div className="rounded-[4px] border-[1px] border-[#1d2532]/15 bg-[#f4df8b] px-3 py-2 text-[0.74rem] leading-[1.4] text-[#1d2532] shadow-[0_2px_0_rgba(0,0,0,0.10)]">
-            <div className="font-bold uppercase">При нажатии</div>
-            <div>на пропустить</div>
-            <div>выводится</div>
-            <div>сообщение, что</div>
-            <div>если вы</div>
-            <div>пропустите, то</div>
-            <div>не получите</div>
-            <div>баллов</div>
-          </div>
-        </aside>
+          {actionError ? (
+            <div className="mt-4">
+              <Notice tone="error">{actionError}</Notice>
+            </div>
+          ) : null}
+
+          {isFinal ? (
+            <div className="mt-6 border-t border-ink/10 pt-5">
+              <BackLink />
+            </div>
+          ) : null}
+        </article>
+
+        <TimerPanel task={task} />
       </div>
+
+      {canSkip ? (
+        <Modal
+          open={skipConfirmOpen}
+          onClose={() => {
+            if (!busy) setSkipConfirmOpen(false);
+          }}
+          title="Пропустить задание?"
+        >
+          <p className="mt-4 text-[1rem] leading-6 text-ink/75">
+            Если вы пропустите задание, то не получите за него баллов. Отменить пропуск будет
+            нельзя.
+          </p>
+
+          {actionError ? (
+            <p role="alert" className="mt-3 text-[0.875rem] text-error">
+              {actionError}
+            </p>
+          ) : null}
+
+          <div className="mt-6 flex gap-3">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleSkipConfirm}
+              className={`${primaryButtonClass} flex-1 px-4`}
+            >
+              {pending === "skip" ? "Пропускаем…" : "Пропустить"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setSkipConfirmOpen(false)}
+              className={`${secondaryButtonClass} flex-1 px-4`}
+            >
+              Отмена
+            </button>
+          </div>
+        </Modal>
+      ) : null}
+    </>
+  );
+}
+
+function StateCard({ children, tone = "text-ink/70" }: { children: ReactNode; tone?: string }) {
+  return (
+    <div className={cardClass}>
+      <div className={`flex flex-col items-start gap-4 text-[1rem] ${tone}`}>{children}</div>
     </div>
   );
+}
+
+export function TaskDetailPage({ taskId }: { taskId: number }) {
+  const modules = useTasksStore((state) => state.modules);
+  const sections = useTasksStore((state) => state.sections);
+  const tasks = useTasksStore((state) => state.tasks);
+  const status = useTasksStore((state) => state.status);
+  const error = useTasksStore((state) => state.error);
+  const fetchTasks = useTasksStore((state) => state.fetch);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  if (status === "idle" || status === "loading") {
+    return (
+      <StateCard>
+        <p>Загружаем задание…</p>
+      </StateCard>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <StateCard tone="text-error">
+        <p role="alert">{error ?? "Не удалось загрузить задание"}</p>
+        <BackLink />
+      </StateCard>
+    );
+  }
+
+  const task = tasks.find((item) => item.id === taskId);
+
+  if (!task) {
+    return (
+      <StateCard>
+        <p>Такого задания нет.</p>
+        <BackLink />
+      </StateCard>
+    );
+  }
+
+  if (task.status === "closed") {
+    return (
+      <StateCard>
+        <h1 className="text-[1.375rem] font-bold uppercase text-ink sm:text-h3">{task.title}</h1>
+        <p>Это задание пока закрыто — оно откроется, когда вы завершите предыдущее.</p>
+        <BackLink />
+      </StateCard>
+    );
+  }
+
+  const section = sections.find((item) => item.id === task.sectionId);
+  const parentModule = modules.find((item) => item.id === section?.moduleId);
+
+  return <TaskView key={task.id} task={task} moduleName={parentModule?.name ?? "Задания"} />;
 }
