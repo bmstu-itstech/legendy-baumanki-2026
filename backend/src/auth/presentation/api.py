@@ -49,6 +49,6 @@ async def logout(auth: TokenAuthDep):
 # @access_control(open=True)
 async def get_me(auth: TokenAuthDep) -> AuthenticatedUser:
     user = auth.request.state.user
-    if not user:
+    if not user or not user.id:
         raise NotAuthenticated()
     return user

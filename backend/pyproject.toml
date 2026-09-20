@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "0.2.0"
+version = "1.0.0"
 description = "Бэкенд для сайта Легенд Бауманки 2026"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -8,7 +8,7 @@ dependencies = [
     "bcrypt>=5.0.0",
     "fastapi>=0.141.1",
     "python-jose>=3.4.0",
-    "pydantic>=2.13.5",
+    "pydantic[email]>=2.13.5",
     "pydantic-settings>=2.15.0",
     "sqladmin>=0.31.1",
     "sqlalchemy>=2.0.52",
