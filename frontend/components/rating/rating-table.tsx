@@ -9,7 +9,7 @@ import { useRatingStore } from "@/lib/store/rating-store";
 import type { RatingBoard } from "@/lib/types";
 
 const cardClass =
-  "flex w-full flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9";
+  "flex w-full flex-col rounded-[18px] border-2 border-secondary bg-white px-1 py-7 sm:px-9";
 
 /**
  * Первые две колонки «залипают» слева: на каждое задание приходится своя
