@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { adminApi, type AdminModuleContent, type AdminTask } from "@/lib/api/admin";
 import { toErrorMessage } from "@/lib/api/errors";
+import { Modal } from "@/components/ui/modal";
 
 import {
   DangerButton,
@@ -17,6 +18,23 @@ import {
   panelClass,
   secondaryButtonClass,
 } from "@/components/admin/admin-ui";
+
+type DeleteTarget = { kind: "module" } | { kind: "section"; number: number } | { kind: "task"; id: number };
+
+const DELETE_COPY: Record<DeleteTarget["kind"], { title: string; body: string }> = {
+  module: {
+    title: "Удалить модуль?",
+    body: "Это возможно, только если в нём нет секций и заданий. Отменить будет нельзя.",
+  },
+  section: {
+    title: "Удалить секцию?",
+    body: "Это возможно, только если в ней нет заданий. Отменить будет нельзя.",
+  },
+  task: {
+    title: "Удалить задание?",
+    body: "Отменить будет нельзя.",
+  },
+};
 
 /** ISO -> значение для <input type="datetime-local"> в локальном времени браузера. */
 function toDatetimeLocalInput(iso: string) {
@@ -79,6 +97,9 @@ export default function AdminModuleDetailPage() {
   const [sectionTitle, setSectionTitle] = useState("");
   const [creatingSection, setCreatingSection] = useState(false);
 
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   async function load() {
     try {
       const c = await adminApi.getModuleContent(moduleId);
@@ -118,13 +139,27 @@ export default function AdminModuleDetailPage() {
     }
   }
 
-  async function handleDeleteModule() {
-    if (!confirm("Удалить модуль? Это возможно, только если в нём нет секций и заданий.")) return;
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError(null);
     try {
-      await adminApi.deleteModule(moduleId);
-      router.push("/admin");
+      if (deleteTarget.kind === "module") {
+        await adminApi.deleteModule(moduleId);
+        router.push("/admin");
+        return;
+      }
+      if (deleteTarget.kind === "section") {
+        await adminApi.deleteSection(moduleId, deleteTarget.number);
+      } else {
+        await adminApi.deleteTask(deleteTarget.id);
+      }
+      setDeleteTarget(null);
+      await load();
     } catch (err) {
       setError(toErrorMessage(err));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -156,25 +191,6 @@ export default function AdminModuleDetailPage() {
     }
   }
 
-  async function handleDeleteSection(number: number) {
-    if (!confirm("Удалить секцию? Это возможно, только если в ней нет заданий.")) return;
-    try {
-      await adminApi.deleteSection(moduleId, number);
-      await load();
-    } catch (err) {
-      setError(toErrorMessage(err));
-    }
-  }
-
-  async function handleDeleteTask(taskId: number) {
-    if (!confirm("Удалить задание? Отменить будет нельзя.")) return;
-    try {
-      await adminApi.deleteTask(taskId);
-      await load();
-    } catch (err) {
-      setError(toErrorMessage(err));
-    }
-  }
 
   if (!content) {
     return error ? <Notice tone="error">{error}</Notice> : <p className="text-ink/70">Загрузка…</p>;
@@ -227,7 +243,7 @@ export default function AdminModuleDetailPage() {
             <PrimaryButton type="submit" disabled={savingModule}>
               {savingModule ? "Сохраняем…" : "Сохранить"}
             </PrimaryButton>
-            <DangerButton onClick={handleDeleteModule}>Удалить</DangerButton>
+            <DangerButton onClick={() => setDeleteTarget({ kind: "module" })}>Удалить</DangerButton>
           </div>
         </form>
       </div>
@@ -251,7 +267,9 @@ export default function AdminModuleDetailPage() {
                   <SecondaryButton onClick={() => handleRenameSection(s.number, s.title)}>
                     Переименовать
                   </SecondaryButton>
-                  <DangerButton onClick={() => handleDeleteSection(s.number)}>Удалить</DangerButton>
+                  <DangerButton onClick={() => setDeleteTarget({ kind: "section", number: s.number })}>
+                    Удалить
+                  </DangerButton>
                 </div>
               </li>
             ))}
@@ -285,18 +303,46 @@ export default function AdminModuleDetailPage() {
             <TaskList
               tasks={tasksBySection.get(s.number) ?? []}
               moduleId={moduleId}
-              onDelete={handleDeleteTask}
+              onDelete={(id) => setDeleteTarget({ kind: "task", id })}
             />
           </div>
         ))}
 
         <div className="mt-4">
           <h3 className="text-[0.9375rem] font-bold uppercase text-ink/70">Побочные задания</h3>
-          <TaskList tasks={auxiliaryTasks} moduleId={moduleId} onDelete={handleDeleteTask} />
+          <TaskList
+            tasks={auxiliaryTasks}
+            moduleId={moduleId}
+            onDelete={(id) => setDeleteTarget({ kind: "task", id })}
+          />
         </div>
       </div>
 
       {error ? <Notice tone="error">{error}</Notice> : null}
+
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => {
+          if (!deleting) setDeleteTarget(null);
+        }}
+        title={deleteTarget ? DELETE_COPY[deleteTarget.kind].title : ""}
+      >
+        <p className="mt-4 text-[1rem] leading-6 text-ink/75">
+          {deleteTarget ? DELETE_COPY[deleteTarget.kind].body : ""}
+        </p>
+        <div className="mt-6 flex gap-3">
+          <DangerButton disabled={deleting} onClick={handleConfirmDelete} className="flex-1">
+            {deleting ? "Удаляем…" : "Удалить"}
+          </DangerButton>
+          <SecondaryButton
+            disabled={deleting}
+            onClick={() => setDeleteTarget(null)}
+            className="flex-1"
+          >
+            Отмена
+          </SecondaryButton>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   type AdminTask,
 } from "@/lib/api/admin";
 import { toErrorMessage } from "@/lib/api/errors";
+import { Modal } from "@/components/ui/modal";
 
 import {
   CheckboxField,
@@ -103,6 +104,7 @@ export function TaskEditorForm({
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function updateQuestion(index: number, patch: Partial<QuestionDraft>) {
@@ -174,7 +176,6 @@ export function TaskEditorForm({
 
   async function handleDelete() {
     if (!task) return;
-    if (!confirm("Удалить задание? Отменить будет нельзя.")) return;
 
     setDeleting(true);
     setError(null);
@@ -185,10 +186,13 @@ export function TaskEditorForm({
     } catch (err) {
       setError(toErrorMessage(err));
       setDeleting(false);
+    } finally {
+      setDeleteConfirmOpen(false);
     }
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className={panelClass}>
         <h1 className="text-[1.25rem] font-bold uppercase text-ink">
@@ -428,11 +432,36 @@ export function TaskEditorForm({
           {saving ? "Сохраняем…" : task ? "Сохранить" : "Создать задание"}
         </PrimaryButton>
         {task ? (
-          <DangerButton onClick={handleDelete} disabled={deleting}>
+          <DangerButton onClick={() => setDeleteConfirmOpen(true)} disabled={deleting}>
             {deleting ? "Удаляем…" : "Удалить задание"}
           </DangerButton>
         ) : null}
       </div>
     </form>
+
+    {task ? (
+      <Modal
+        open={deleteConfirmOpen}
+        onClose={() => {
+          if (!deleting) setDeleteConfirmOpen(false);
+        }}
+        title="Удалить задание?"
+      >
+        <p className="mt-4 text-[1rem] leading-6 text-ink/75">Отменить будет нельзя.</p>
+        <div className="mt-6 flex gap-3">
+          <DangerButton disabled={deleting} onClick={handleDelete} className="flex-1">
+            {deleting ? "Удаляем…" : "Удалить"}
+          </DangerButton>
+          <SecondaryButton
+            disabled={deleting}
+            onClick={() => setDeleteConfirmOpen(false)}
+            className="flex-1"
+          >
+            Отмена
+          </SecondaryButton>
+        </div>
+      </Modal>
+    ) : null}
+    </>
   );
 }
