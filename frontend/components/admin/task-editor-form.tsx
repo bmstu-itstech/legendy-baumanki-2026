@@ -434,7 +434,7 @@ export function TaskEditorForm({
                       accept={MEDIA_ACCEPT[m.mediaType]}
                       disabled={m.uploading}
                       onChange={(event) => handleMediaFileChange(index, event.target.files)}
-                      className="text-[0.9375rem] text-ink/75 file:mr-3 file:h-10 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-4 file:font-hand file:text-[0.9375rem] file:uppercase file:text-white disabled:opacity-60"
+                      className="min-w-0 flex-1 truncate text-[0.9375rem] text-ink/75 file:mr-3 file:h-10 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-4 file:font-hand file:text-[0.9375rem] file:uppercase file:text-white disabled:opacity-60"
                     />
                     <TextInput
                       type="number"
