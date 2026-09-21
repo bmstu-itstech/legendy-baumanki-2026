@@ -355,7 +355,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
                               aria-invalid={error ? true : undefined}
                               aria-describedby={error ? `${fieldId}-error` : undefined}
                               onChange={(event) => handleFileChange(index, event.target.files)}
-                              className="max-w-[440px] text-[0.9375rem] text-ink/75 file:mr-4 file:h-11 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-5 file:font-hand file:text-[1rem] file:uppercase file:text-white disabled:opacity-60"
+                              className="block w-full max-w-[440px] truncate text-[0.9375rem] text-ink/75 file:mr-4 file:h-11 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-5 file:font-hand file:text-[1rem] file:uppercase file:text-white disabled:opacity-60"
                             />
                             <p className="text-[0.8125rem] text-ink/55">
                               {uploading[index]
