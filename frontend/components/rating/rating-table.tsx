@@ -90,7 +90,7 @@ function BoardTabs({
       role="tablist"
       aria-label="Рейтинги"
       onKeyDown={handleKeyDown}
-      className="scrollbar-thin -mx-6 flex gap-2 overflow-x-auto px-6 pt-1 pb-3 sm:-mx-9 sm:px-9 sm:pt-1 sm:pb-3"
+      className="scrollbar-thin -mx-1 flex gap-2 overflow-x-auto px-1 pt-1 pb-3 sm:-mx-9 sm:px-9 sm:pt-1 sm:pb-3"
     >
       {boards.map((board) => {
         const active = board.id === value;
