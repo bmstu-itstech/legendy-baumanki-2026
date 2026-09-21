@@ -6,6 +6,10 @@ from src.auth.presentation.dependencies import (
     TokenAuthDep,
     UserUoWDep,
 )
+from src.auth.presentation.rate_limit import (
+    enforce_login_rate_limit,
+    enforce_register_rate_limit,
+)
 from src.auth.usecases import authenticate, register_user
 from src.core.domain.exceptions.exceptions import NotAuthenticated
 
@@ -19,6 +23,7 @@ async def register(
     uow: UserUoWDep,
     auth: TokenAuthDep,
 ):
+    enforce_register_rate_limit(auth.request)
     return await register_user(user_data, pwd_hasher, uow, auth)
 
 
@@ -29,6 +34,7 @@ async def login(
     uow: UserUoWDep,
     auth: TokenAuthDep,
 ):
+    enforce_login_rate_limit(auth.request, credentials.email)
     await authenticate(
         credentials.email,
         credentials.password.get_secret_value(),

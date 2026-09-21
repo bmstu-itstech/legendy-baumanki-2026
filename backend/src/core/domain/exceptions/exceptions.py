@@ -48,3 +48,9 @@ class NotAuthenticated(AppException):
     status_code = statuses.HTTP_401_UNAUTHORIZED
     detail = "User not authenticated"
     error_code = "not_authenticated"
+
+
+class TooManyRequests(AppException):
+    status_code = statuses.HTTP_429_TOO_MANY_REQUESTS
+    detail = "Too many requests"
+    error_code = "too_many_requests"
