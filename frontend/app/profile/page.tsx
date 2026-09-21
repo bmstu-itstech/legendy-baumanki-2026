@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 
 export default function ProfilePage() {
   return (
-    <>
+    <div className="mx-auto max-w-[900px]">
       <h1 className="text-[1.375rem] font-bold uppercase text-ink sm:text-h3">Профиль</h1>
 
       <div className="mt-6 flex flex-col items-center gap-6 xl:flex-row xl:items-stretch">
         <ProfileCard />
         <TeamCard />
       </div>
-    </>
+    </div>
   );
 }
