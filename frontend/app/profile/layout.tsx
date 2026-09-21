@@ -1,5 +1,5 @@
 import { RequireAuth } from "@/components/auth/route-guard";
-import { EventCountdown } from "@/components/layout/event-countdown";
+// import { EventCountdown } from "@/components/layout/event-countdown";
 import { CornerDashStar } from "@/components/profile/profile-decor";
 import { ProfileBottomNav, ProfileSidebar } from "@/components/profile/profile-nav";
 
@@ -7,7 +7,7 @@ export default function ProfileLayout({ children }: LayoutProps<"/profile">) {
   return (
     <RequireAuth>
       <div className="sticky top-0 z-50">
-        <EventCountdown />
+        {/* <EventCountdown /> */}
       </div>
 
       <main className="flex min-h-[calc(100svh-2rem)] flex-1 bg-mist xl:min-h-[calc(100svh-2.25rem)]">
