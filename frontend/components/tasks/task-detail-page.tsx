@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 
+import { Lightbox, useLightbox } from "@/components/ui/lightbox";
 import { Modal } from "@/components/ui/modal";
 import { toErrorMessage } from "@/lib/api/errors";
 import { fileDownloadUrl, filesApi } from "@/lib/api/files";
@@ -69,20 +70,30 @@ function Notice({
   );
 }
 
-function MediaItem({ item, single }: { item: TaskMedia; single: boolean }) {
+function MediaItem({
+  item,
+  single,
+  onOpen,
+}: {
+  item: TaskMedia;
+  single: boolean;
+  onOpen?: () => void;
+}) {
   const frameClass = "overflow-hidden rounded-[12px] border-2 border-ink/10 bg-mist";
 
   if (item.type === "image") {
     return (
       <figure className={frameClass}>
-        {/* Медиа приходят с бэкенда с произвольных адресов — next/image здесь не подходит. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={item.url}
-          alt={item.caption ?? "Иллюстрация к заданию"}
-          loading="lazy"
-          className={`w-full object-cover ${single ? "max-h-[420px]" : "aspect-[4/3]"}`}
-        />
+        <button type="button" onClick={onOpen} className="block w-full cursor-zoom-in">
+          {/* Медиа приходят с бэкенда с произвольных адресов — next/image здесь не подходит. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.url}
+            alt={item.caption ?? "Иллюстрация к заданию"}
+            loading="lazy"
+            className={`w-full object-cover ${single ? "max-h-[420px]" : "aspect-[4/3]"}`}
+          />
+        </button>
       </figure>
     );
   }
@@ -106,14 +117,38 @@ function MediaItem({ item, single }: { item: TaskMedia; single: boolean }) {
 }
 
 function MediaGrid({ media }: { media: TaskMedia[] }) {
+  const images = media.filter((item) => item.type === "image");
+  const { openIndex, open, close, show } = useLightbox(images.length);
+
   if (media.length === 0) return null;
 
   return (
-    <div className={`mt-5 grid gap-3 ${media.length > 1 ? "sm:grid-cols-2" : ""}`}>
-      {media.map((item) => (
-        <MediaItem key={item.id} item={item} single={media.length === 1} />
-      ))}
-    </div>
+    <>
+      <div className={`mt-5 grid gap-3 ${media.length > 1 ? "sm:grid-cols-2" : ""}`}>
+        {media.map((item) => (
+          <MediaItem
+            key={item.id}
+            item={item}
+            single={media.length === 1}
+            onOpen={
+              item.type === "image"
+                ? () => open(images.findIndex((image) => image.id === item.id))
+                : undefined
+            }
+          />
+        ))}
+      </div>
+
+      <Lightbox
+        items={images.map((image) => ({
+          src: image.url,
+          alt: image.caption ?? "Иллюстрация к заданию",
+        }))}
+        openIndex={openIndex}
+        onClose={close}
+        onShow={show}
+      />
+    </>
   );
 }
 
