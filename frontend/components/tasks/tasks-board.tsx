@@ -218,10 +218,23 @@ function layoutModuleMap(groups: MapGroup[], sideTasks: Task[], width: number) {
         const lap = sideTasks.length <= pockets.length ? 0 : Math.floor(index / pockets.length);
         const bend = pockets[slot];
         const half = STAR_OUTER / 2 + 4;
+        // Зеркалка «width - bend.x» работает, только если у кармана есть
+        // боковое смещение волны. Когда карманов нет (мало заданий — pockets
+        // = main) и берём первую точку змейки, та стоит точно по центру
+        // (MAP_WAVE[0] === 0): зеркалка от центра схлопывается в ту же
+        // точку, и звезда садится прямо поверх кружка задания — визуально
+        // выглядит так, будто звезда «слишком крупная», хотя на деле это
+        // наложение двух узлов. Для центрированного кармана вместо зеркалки
+        // отодвигаем звезду на фиксированный безопасный отступ в сторону.
+        const centered = Math.abs(bend.x - width / 2) < 1;
+        const minOffset = NODE_OUTER / 2 + STAR_OUTER / 2 + 12;
+        const x = centered
+          ? width / 2 + (index % 2 === 0 ? -minOffset : minOffset)
+          : width - bend.x;
 
         return {
           task,
-          x: Math.min(Math.max(width - bend.x, half), width - half),
+          x: Math.min(Math.max(x, half), width - half),
           y: bend.y + lap * (MAP_ROW / 2),
         };
       })
