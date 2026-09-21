@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-import { MOCK_RATING_BOARDS } from "@/lib/mocks/tasks";
+import { ratingApi } from "@/lib/api/rating";
+import { toErrorMessage } from "@/lib/api/errors";
 import type { RatingBoard } from "@/lib/types";
 
 type RatingStatus = "idle" | "loading" | "loaded" | "error";
@@ -20,14 +21,14 @@ export const useRatingStore = create<RatingState & RatingActions>((set) => ({
   status: "idle",
   error: null,
 
-  // TODO: заменить на lib/api/rating.ts, когда появится бэкенд — пока моки.
   fetch: async () => {
     set({ status: "loading", error: null });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      set({ boards: MOCK_RATING_BOARDS, status: "loaded" });
-    } catch {
-      set({ status: "error", error: "Не удалось загрузить рейтинг" });
+      const ratings = await ratingApi.getRatings();
+      const boards = await Promise.all(ratings.map((rating) => ratingApi.getRating(rating.id)));
+      set({ boards, status: "loaded" });
+    } catch (err) {
+      set({ status: "error", error: toErrorMessage(err) });
     }
   },
 }));

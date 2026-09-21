@@ -169,8 +169,11 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
   const skip = useTasksStore((state) => state.skip);
 
   const answerId = useId();
-  const [answer, setAnswer] = useState("");
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  // Пересоздаются при смене задания: TaskDetailPage монтирует TaskView с key={task.id}.
+  const [answers, setAnswers] = useState<string[]>(() => task.questions.map(() => ""));
+  const [fieldErrors, setFieldErrors] = useState<(string | null)[]>(() =>
+    task.questions.map(() => null),
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
@@ -199,11 +202,18 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const error = validateAnswer(answer, task.answerPattern);
-    setFieldError(error);
-    if (error) return;
+    const errors = task.questions.map((question, index) =>
+      validateAnswer(answers[index] ?? "", question.pattern),
+    );
+    setFieldErrors(errors);
+    if (errors.some((error) => error !== null)) return;
 
-    await run("submit", () => submitAnswer(task.id, answer.trim()));
+    await run("submit", () =>
+      submitAnswer(
+        task.id,
+        answers.map((value) => value.trim()),
+      ),
+    );
   }
 
   async function handleSkipConfirm() {
@@ -249,33 +259,49 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
               <MediaGrid media={task.media} />
 
               {status === "started" ? (
-                <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-2">
-                  <label htmlFor={answerId} className="text-[0.9375rem] font-bold text-ink">
-                    {task.answerLabel}
-                  </label>
-                  <input
-                    id={answerId}
-                    type="text"
-                    autoComplete="off"
-                    value={answer}
-                    disabled={busy}
-                    aria-invalid={fieldError ? true : undefined}
-                    aria-describedby={fieldError ? `${answerId}-error` : undefined}
-                    onChange={(event) => {
-                      setAnswer(event.target.value);
-                      if (fieldError) setFieldError(null);
-                    }}
-                    className={`h-12 w-full max-w-[440px] rounded-full bg-mist px-5 text-[1.0625rem] font-medium text-ink outline-none ring-2 transition-shadow placeholder:text-ink/40 focus-visible:ring-secondary disabled:opacity-60 ${
-                      fieldError ? "ring-error" : "ring-transparent"
-                    }`}
-                  />
-                  {fieldError ? (
-                    <p id={`${answerId}-error`} role="alert" className="text-[0.875rem] text-error">
-                      {fieldError}
-                    </p>
-                  ) : null}
+                <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-5">
+                  {task.questions.map((question, index) => {
+                    const fieldId = `${answerId}-${index}`;
+                    const error = fieldErrors[index];
 
-                  <div className="mt-4 flex flex-wrap gap-3">
+                    return (
+                      <div key={fieldId} className="flex flex-col gap-2">
+                        <label htmlFor={fieldId} className="text-[0.9375rem] font-bold text-ink">
+                          {question.text}
+                        </label>
+                        <input
+                          id={fieldId}
+                          type="text"
+                          autoComplete="off"
+                          value={answers[index] ?? ""}
+                          disabled={busy}
+                          aria-invalid={error ? true : undefined}
+                          aria-describedby={error ? `${fieldId}-error` : undefined}
+                          onChange={(event) => {
+                            const { value } = event.target;
+                            setAnswers((current) =>
+                              current.map((item, i) => (i === index ? value : item)),
+                            );
+                            if (error) {
+                              setFieldErrors((current) =>
+                                current.map((item, i) => (i === index ? null : item)),
+                              );
+                            }
+                          }}
+                          className={`h-12 w-full max-w-[440px] rounded-full bg-mist px-5 text-[1.0625rem] font-medium text-ink outline-none ring-2 transition-shadow placeholder:text-ink/40 focus-visible:ring-secondary disabled:opacity-60 ${
+                            error ? "ring-error" : "ring-transparent"
+                          }`}
+                        />
+                        {error ? (
+                          <p id={`${fieldId}-error`} role="alert" className="text-[0.875rem] text-error">
+                            {error}
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+
+                  <div className="flex flex-wrap gap-3">
                     <button type="submit" disabled={busy} className={primaryButtonClass}>
                       {pending === "submit" ? "Отправляем…" : "Отправить"}
                     </button>

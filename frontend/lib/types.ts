@@ -31,7 +31,6 @@ export type MyProfile = {
 };
 
 export type CreateProfilePayload = {
-  userId: number;
   fullName: string;
   group: string;
   telegram: string;
@@ -79,19 +78,17 @@ export type CreatedTeam = {
 };
 
 // ---------------------------------------------------------------------------
-// Задания и рейтинг — драфт моделей по ТЗ с доски. Бэкенда и записи в
-// lb26.openapi.json под них пока нет, на фронте временно ездим на моках
-// (см. lib/mocks/tasks.ts). Поля и статусы — предварительные, уточнить при
-// появлении реального API.
+// Задания и рейтинг — модели поверх модулей tasks/ratings бэкенда (см.
+// lb26.openapi.json). Сборка модулей/секций/заданий в плоские списки с
+// синтетическими id секций происходит в lib/api/tasks.ts, маппинг рейтинга —
+// в lib/api/rating.ts.
 // ---------------------------------------------------------------------------
 
-export type TaskFormat = "offline" | "online";
-
 /**
- * Статус задания для команды. Переходы (по мокапу с доски):
- * closed -> opened (авто, когда закрыто предыдущее)
+ * Статус задания для команды. Переходы:
+ * closed -> opened (авто, когда открылся модуль и/или выполнено требуемое задание)
  * opened -> skipped | started
- * started -> skipped | review (ручная проверка) | completed (авто-проверка)
+ * started -> skipped | review (ручная проверка) | completed | failed (авто-проверка)
  * review -> completed | failed
  */
 export type TaskStatus =
@@ -102,8 +99,6 @@ export type TaskStatus =
   | "completed"
   | "skipped"
   | "failed";
-
-export type TaskCheckType = "auto" | "manual";
 
 /**
  * main — основное задание на «змейке» модуля; side — побочное (вспомогательное):
@@ -116,7 +111,6 @@ export type Module = {
   id: number;
   name: string;
   order: number;
-  sectionsCount: number;
   /** ISO-дата открытия (`open_at` в API). Модули открываются постепенно: до этой даты задания недоступны. */
   openAt: string;
 };
@@ -126,7 +120,6 @@ export type TaskSection = {
   moduleId: number;
   order: number;
   title: string;
-  tasksCount: number;
 };
 
 export type TaskMediaType = "image" | "video" | "audio";
@@ -135,8 +128,18 @@ export type TaskMedia = {
   id: number;
   type: TaskMediaType;
   url: string;
-  /** Подпись / alt-текст. */
+  /** Подпись / alt-текст. Бэкенд подписи не отдаёт. */
   caption: string | null;
+};
+
+/** Один вопрос задания — у большинства заданий он единственный. */
+export type TaskQuestion = {
+  text: string;
+  /**
+   * Регулярка от бэка для проверки формата ответа на клиенте (если задана).
+   * Трактуется как полное совпадение — как атрибут `pattern` у input.
+   */
+  pattern: string | null;
 };
 
 export type Task = {
@@ -147,27 +150,20 @@ export type Task = {
   /** Номер задания в кружочке на карте раздела (у побочных не показывается). */
   index: number;
   title: string;
-  /** Общее описание — видно, пока задание не начато. */
+  /**
+   * Описание задания. У бэкенда один общий текст на teaser (до старта) и
+   * сам текст задания (после старта) — поэтому description и assignment совпадают.
+   */
   description: string;
-  /** Текст самого задания (блок «Задание») — показываем после старта. */
   assignment: string;
   /** Фото / видео / аудио к заданию, от 0 до 4 штук. */
   media: TaskMedia[];
-  /** Подпись над полем ответа. */
-  answerLabel: string;
+  questions: TaskQuestion[];
   /**
-   * Регулярка от бэка для проверки формата ответа на клиенте (если задана).
-   * Трактуется как полное совпадение — как атрибут `pattern` у input.
-   */
-  answerPattern: string | null;
-  /**
-   * Текст-пояснение. Открывается только после успешного выполнения —
-   * настоящий бэкенд не должен отдавать его раньше.
+   * Текст-пояснение. Бэкенд отдаёт его только при status: "completed" —
+   * до этого поле null, чтобы не спойлерить решение через сетевые запросы.
    */
   explanation: string | null;
-  checkType: TaskCheckType;
-  /** Лимита времени нет — задания атомарны. Поле оставлено под черновик API, в моках всегда null. */
-  timeLimitSec: number | null;
   /** Баллы за задание: в большинстве случаев 1. */
   points: number;
   status: TaskStatus;
