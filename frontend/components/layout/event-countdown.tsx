@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-const EVENT_START = new Date("2026-09-21T09:00:00+03:00");
+const EVENT_START = new Date("2026-09-21T14:00:00+03:00");
 
 type TimeLeft = {
   days: number;
@@ -61,20 +61,21 @@ function pad(value: number): string {
 export function EventCountdown() {
   const timeLeft = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  // До первого клиентского рендера (SSR) время неизвестно — держим место под
+  // баннер, чтобы не дёргать layout. После того как таймер дошёл до нуля,
+  // баннер просто убираем — новое событие в этот момент не анонсируем.
   if (timeLeft === undefined) {
     return <div className="h-8 bg-accent xl:h-9" aria-hidden="true" />;
   }
 
+  if (timeLeft === null) return null;
+
   return (
     <div className="flex h-8 w-full items-center justify-center bg-accent px-4 text-center text-[0.6875rem] font-bold uppercase tracking-wide text-ink xl:h-9 xl:text-caption">
-      {timeLeft === null ? (
-        <span>Мероприятие началось!</span>
-      ) : (
-        <span>
-          До начала мероприятия осталось {timeLeft.days} {pluralizeDays(timeLeft.days)}{" "}
-          {pad(timeLeft.hours)}:{pad(timeLeft.minutes)}:{pad(timeLeft.seconds)}
-        </span>
-      )}
+      <span>
+        До начала мероприятия осталось {timeLeft.days} {pluralizeDays(timeLeft.days)}{" "}
+        {pad(timeLeft.hours)}:{pad(timeLeft.minutes)}:{pad(timeLeft.seconds)}
+      </span>
     </div>
   );
 }
