@@ -24,11 +24,36 @@ type TasksActions = {
   skip: (taskId: number) => Promise<void>;
 };
 
+async function loadTree(): Promise<Pick<TasksState, "modules" | "sections" | "tasks">> {
+  const modules = await tasksApi.getModules();
+  const details = await Promise.all(modules.map((module) => tasksApi.getModuleDetails(module.id)));
+  return {
+    modules,
+    sections: details.flatMap((detail) => detail.sections),
+    tasks: details.flatMap((detail) => detail.tasks),
+  };
+}
+
 export const useTasksStore = create<TasksState & TasksActions>((set, get) => {
   const patchTask = (taskId: number, patch: Partial<Task>) =>
     set((state) => ({
       tasks: state.tasks.map((task) => (task.id === taskId ? { ...task, ...patch } : task)),
     }));
+
+  // После start/submitAnswer/skip статус других заданий тоже мог поменяться
+  // (следующее задание в цепочке require_task_id разблокировалось), а
+  // patchTask точечно обновляет только само действие. Тихо перекачиваем всё
+  // дерево — без этого разблокировка была видна только после перезагрузки
+  // страницы (заново создающей store). status не трогаем, чтобы не мигать
+  // загрузкой поверх уже отрисованной карты; если рефреш не удался, ничего
+  // не теряем — следующее действие или ручной reload всё равно поправят.
+  const refreshTree = async () => {
+    try {
+      set(await loadTree());
+    } catch {
+      // молча игнорируем — patchTask уже отразил результат самого действия
+    }
+  };
 
   return {
     modules: [],
@@ -37,50 +62,48 @@ export const useTasksStore = create<TasksState & TasksActions>((set, get) => {
     status: "idle",
     error: null,
 
-    // Повторный fetch ничего не перезапрашивает — дальнейшая актуализация
-    // статусов идёт точечно через start/submitAnswer/skip, без рефетча дерева.
     fetch: async () => {
       if (get().status === "loaded") return;
 
       set({ status: "loading", error: null });
       try {
-        const modules = await tasksApi.getModules();
-        const details = await Promise.all(
-          modules.map((module) => tasksApi.getModuleDetails(module.id)),
-        );
-        set({
-          modules,
-          sections: details.flatMap((detail) => detail.sections),
-          tasks: details.flatMap((detail) => detail.tasks),
-          status: "loaded",
-        });
+        set({ ...(await loadTree()), status: "loaded" });
       } catch (err) {
         set({ status: "error", error: toErrorMessage(err) });
       }
     },
 
     start: async (taskId) => {
+      let progress;
       try {
-        patchTask(taskId, await tasksApi.start(taskId));
+        progress = await tasksApi.start(taskId);
       } catch (err) {
         throw new Error(toErrorMessage(err));
       }
+      patchTask(taskId, progress);
+      await refreshTree();
     },
 
     submitAnswer: async (taskId, answers) => {
+      let progress;
       try {
-        patchTask(taskId, await tasksApi.answer(taskId, answers));
+        progress = await tasksApi.answer(taskId, answers);
       } catch (err) {
         throw new Error(toErrorMessage(err));
       }
+      patchTask(taskId, progress);
+      await refreshTree();
     },
 
     skip: async (taskId) => {
+      let progress;
       try {
-        patchTask(taskId, await tasksApi.skip(taskId));
+        progress = await tasksApi.skip(taskId);
       } catch (err) {
         throw new Error(toErrorMessage(err));
       }
+      patchTask(taskId, progress);
+      await refreshTree();
     },
   };
 });
