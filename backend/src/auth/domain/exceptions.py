@@ -3,6 +3,7 @@ from src.core.domain.exceptions.exceptions import (
     BadRequest,
     NotAuthenticated,
     NotFound,
+    TooManyRequests,
 )
 
 
@@ -14,6 +15,7 @@ class ErrorCode:
     EMAIL_TAKEN = "Email is already taken."
     REFRESH_TOKEN_NOT_VALID = "Refresh token is not valid."
     REFRESH_TOKEN_REQUIRED = "Refresh token is required either in the body or cookie."
+    RATE_LIMIT_EXCEEDED = "Too many attempts, try again later."
 
 
 class UserAlreadyExists(AlreadyExists):
@@ -59,3 +61,8 @@ class RefreshTokenRequired(BadRequest):
 class RefreshTokenNotValid(NotAuthenticated):
     detail = ErrorCode.REFRESH_TOKEN_NOT_VALID
     error_code = "refresh_token_not_valid"
+
+
+class RateLimitExceeded(TooManyRequests):
+    detail = ErrorCode.RATE_LIMIT_EXCEEDED
+    error_code = "rate_limit_exceeded"

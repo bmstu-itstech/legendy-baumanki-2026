@@ -15,6 +15,23 @@ class AuthConfig(BaseSettings):
     JWT_ACCESS_HEADER_NAME: str = "Authorization"
     JWT_HEADER_TYPE: str = "Bearer"
 
+    # Экспериментальная фича, по умолчанию выключена — см. RateLimitDep.
+    # Лимитер in-memory (как и InMemoryTokenStorage): переживает один процесс,
+    # но не шарится между несколькими воркерами/репликами backend.
+    RATE_LIMIT_ENABLED: bool = False
+    # /auth/login: по email (метит конкретный аккаунт) и по IP (второй, более
+    # мягкий рубеж — не блокирует всю кампусную сеть, если один человек
+    # ошибается паролем).
+    LOGIN_RATE_LIMIT_PER_EMAIL: int = 5
+    LOGIN_RATE_LIMIT_PER_EMAIL_WINDOW_SECONDS: int = 60
+    LOGIN_RATE_LIMIT_PER_IP: int = 20
+    LOGIN_RATE_LIMIT_PER_IP_WINDOW_SECONDS: int = 60
+    # /auth/register: аккаунта ещё нет, поэтому только по IP — порог выше,
+    # чем для login, чтобы не мешать обычной регистрации нескольких студентов
+    # из одной общаги/аудитории.
+    REGISTER_RATE_LIMIT_PER_IP: int = 10
+    REGISTER_RATE_LIMIT_PER_IP_WINDOW_SECONDS: int = 60 * 10
+
     @cached_property
     def JWT_PRIVATE_KEY(self) -> SecretStr:
         with open(self.JWT_PRIVATE_KEY_PATH) as f:

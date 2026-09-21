@@ -1,7 +1,12 @@
 from fastapi import APIRouter, UploadFile
 from src.auth.presentation.dependencies import TokenAuthDep
 from src.files.domain.entities import FileUploadedResponse
-from src.files.presentation.dependencies import FileStorageDep, FileUoWDep
+from src.files.presentation.dependencies import (
+    FileStorageDep,
+    FileUoWDep,
+    TaskMediaCheckerDep,
+    TeamProviderDep,
+)
 from src.files.usecases import get_file, upload_file
 from starlette.responses import FileResponse
 
@@ -9,8 +14,18 @@ files_api_router = APIRouter()
 
 
 @files_api_router.get("/{id}")
-async def download_file(id: int, uow: FileUoWDep, storage: FileStorageDep) -> FileResponse:
-    return await get_file(id, uow, storage)
+async def download_file(
+    id: int,
+    auth: TokenAuthDep,
+    uow: FileUoWDep,
+    storage: FileStorageDep,
+    team_provider: TeamProviderDep,
+    task_media_checker: TaskMediaCheckerDep,
+) -> FileResponse:
+    user = auth.request.state.user
+    return await get_file(
+        id, user.id, user.is_superuser, uow, storage, team_provider, task_media_checker
+    )
 
 
 @files_api_router.post("/upload")

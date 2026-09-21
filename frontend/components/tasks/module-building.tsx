@@ -19,9 +19,9 @@ type Building = {
  */
 const BUILDINGS: Building[] = [
   { label: "Главное здание", src: "/assets/buildings/gz", width: 1836, height: 1187 },
+  { label: "Хим", src: "/assets/buildings/chem", width: 2093, height: 1333 },
   { label: "УЛК", src: "/assets/buildings/ulk", width: 1904, height: 1274 },
   { label: "Конгресс-центр", src: "/assets/buildings/congress", width: 1155, height: 1365 },
-  { label: "Хим", src: "/assets/buildings/chem", width: 2093, height: 1333 },
 ];
 
 /** Высота здания в карточке на широком экране; на узком здание уменьшается вместе с шириной. */
