@@ -209,7 +209,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
   }
   const showAssignment =
     status === "started" || status === "review" || status === "completed" || status === "failed";
-  const canSkip = status === "opened" || status === "started";
+  const canSkip = status === "opened" || status === "started" || status === "failed";
   const isFinal = status === "completed" || status === "skipped" || status === "failed" || status === "review";
 
   async function run(action: PendingAction, fn: () => Promise<void>) {
@@ -290,7 +290,10 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
 
               <MediaGrid media={task.media} />
 
-              {status === "started" ? (
+              {/* Попытки не ограничены: бэкенд принимает answer() и из FAILED
+                  (см. Task.answer в backend/src/tasks/domain/entities.py) —
+                  просто повторно показываем форму вместо тупика. */}
+              {status === "started" || status === "failed" ? (
                 <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-5">
                   {task.questions.map((question, index) => {
                     const fieldId = `${answerId}-${index}`;
@@ -413,7 +416,9 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
 
           {status === "failed" ? (
             <div className="mt-6">
-              <Notice tone="error">Ответ не принят — баллы за это задание не начислены.</Notice>
+              <Notice tone="error">
+                Ответ не принят — баллы за это задание не начислены. Можете попробовать ещё раз.
+              </Notice>
             </div>
           ) : null}
 
