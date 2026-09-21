@@ -11,6 +11,7 @@ import {
   type AdminTask,
 } from "@/lib/api/admin";
 import { toErrorMessage } from "@/lib/api/errors";
+import { filesApi } from "@/lib/api/files";
 import { Modal } from "@/components/ui/modal";
 
 import {
@@ -37,6 +38,13 @@ const MEDIA_TYPES: { value: AdminMediaType; label: string }[] = [
   { value: "file", label: "Файл" },
 ];
 
+const MEDIA_ACCEPT: Record<AdminMediaType, string | undefined> = {
+  image: "image/*",
+  video: "video/*",
+  audio: "audio/*",
+  file: undefined,
+};
+
 type QuestionDraft = {
   text: string;
   questionType: AdminQuestionType;
@@ -50,6 +58,9 @@ type QuestionDraft = {
 type MediaDraft = {
   mediaType: AdminMediaType;
   fileId: string;
+  /** Локальное имя выбранного файла — только для подписи, на бэк не уходит. */
+  fileName?: string;
+  uploading?: boolean;
 };
 
 function emptyQuestion(): QuestionDraft {
@@ -113,6 +124,21 @@ export function TaskEditorForm({
 
   function updateMedia(index: number, patch: Partial<MediaDraft>) {
     setMedia((current) => current.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+  }
+
+  async function handleMediaFileChange(index: number, files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+
+    updateMedia(index, { uploading: true, fileName: file.name });
+    try {
+      const fileId = await filesApi.upload(file);
+      updateMedia(index, { fileId: String(fileId) });
+    } catch (err) {
+      setError(toErrorMessage(err));
+    } finally {
+      updateMedia(index, { uploading: false });
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -400,13 +426,31 @@ export function TaskEditorForm({
                   </select>
                 </Field>
               </div>
-              <div className="flex-1">
-                <Field label="ID файла">
-                  <TextInput
-                    type="number"
-                    value={m.fileId}
-                    onChange={(event) => updateMedia(index, { fileId: event.target.value })}
-                  />
+              <div className="min-w-[260px] flex-1">
+                <Field label="Файл">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="file"
+                      accept={MEDIA_ACCEPT[m.mediaType]}
+                      disabled={m.uploading}
+                      onChange={(event) => handleMediaFileChange(index, event.target.files)}
+                      className="text-[0.9375rem] text-ink/75 file:mr-3 file:h-10 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-4 file:font-hand file:text-[0.9375rem] file:uppercase file:text-white disabled:opacity-60"
+                    />
+                    <TextInput
+                      type="number"
+                      value={m.fileId}
+                      onChange={(event) => updateMedia(index, { fileId: event.target.value })}
+                      placeholder="ID файла"
+                      className="w-28"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[0.8125rem] text-ink/55">
+                    {m.uploading
+                      ? "Загружаем…"
+                      : m.fileId
+                        ? `ID: ${m.fileId}${m.fileName ? ` (${m.fileName})` : ""}`
+                        : "Загрузите файл или укажите ID вручную"}
+                  </p>
                 </Field>
               </div>
               <button
@@ -419,16 +463,12 @@ export function TaskEditorForm({
             </div>
           ))}
         </div>
-
-        <p className="mt-3 text-[0.8125rem] text-ink/50">
-          Загрузка файлов на бэкенде пока не реализована — ID файла нужно знать заранее.
-        </p>
       </div>
 
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       <div className="flex flex-wrap gap-3">
-        <PrimaryButton type="submit" disabled={saving}>
+        <PrimaryButton type="submit" disabled={saving || media.some((m) => m.uploading)}>
           {saving ? "Сохраняем…" : task ? "Сохранить" : "Создать задание"}
         </PrimaryButton>
         {task ? (

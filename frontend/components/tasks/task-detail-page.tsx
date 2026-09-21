@@ -5,7 +5,7 @@ import { useEffect, useId, useState, type FormEvent, type ReactNode } from "reac
 
 import { Modal } from "@/components/ui/modal";
 import { toErrorMessage } from "@/lib/api/errors";
-import { filesApi } from "@/lib/api/files";
+import { fileDownloadUrl, filesApi } from "@/lib/api/files";
 import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
 import type { Task, TaskMedia, TaskQuestion } from "@/lib/types";
@@ -199,7 +199,8 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
     setFieldErrors((current) => current.map((item, i) => (i === index ? null : item)));
     setUploading((current) => current.map((item, i) => (i === index ? true : item)));
     try {
-      const link = await filesApi.upload(file);
+      const fileId = await filesApi.upload(file);
+      const link = fileDownloadUrl(fileId);
       setAnswers((current) => current.map((item, i) => (i === index ? link : item)));
     } catch (err) {
       setFieldErrors((current) => current.map((item, i) => (i === index ? toErrorMessage(err) : item)));
