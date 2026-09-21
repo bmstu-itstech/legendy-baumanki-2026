@@ -13,9 +13,21 @@ from src.auth.presentation.middlewares import (
 from src.core.config import settings
 from src.core.domain.exceptions.exceptions import AppException
 from src.db.engine import engine
+from src.files.presentation.admin import FileAdmin
 from src.files.presentation.api import files_api_router
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
 from src.profile.presentation.api import profiles_api_router, teams_api_router
+from src.tasks.presentation.admin import (
+    ModuleAdmin,
+    SectionAdmin,
+    StateAdmin,
+    TaskAdmin,
+    TaskAnswerAdmin,
+    TaskMediaAdmin,
+    TaskQuestionAdmin,
+    TeamAnswerAdmin,
+)
+from src.tasks.presentation.admin_api import admin_content_api_router
 from src.tasks.presentation.api import (
     modules_api_router,
     ratings_api_router,
@@ -51,6 +63,12 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_origins=settings.backend_cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
+        # Content-Type/Authorization не входят в CORS-safelisted заголовки —
+        # без allow_headers браузер режет их на preflight. expose_headers
+        # нужен, чтобы JS вообще увидел Authorization в ответе (см.
+        # frontend/lib/api/client.ts).
+        allow_headers=["*"],
+        expose_headers=["Authorization"],
     )
 
 api_router = APIRouter()
@@ -63,8 +81,20 @@ api_router.include_router(modules_api_router, prefix="/modules", tags=["modules"
 api_router.include_router(tasks_api_router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(ratings_api_router, prefix="/ratings", tags=["ratings"])
 api_router.include_router(files_api_router, prefix="/files", tags=["files"])
+api_router.include_router(
+    admin_content_api_router, prefix="/admin/content", tags=["admin"]
+)
 
 admin = Admin(app, engine)
 admin.add_view(UserAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(TeamAdmin)
+admin.add_view(ModuleAdmin)
+admin.add_view(SectionAdmin)
+admin.add_view(TaskAdmin)
+admin.add_view(TaskQuestionAdmin)
+admin.add_view(TaskAnswerAdmin)
+admin.add_view(TaskMediaAdmin)
+admin.add_view(StateAdmin)
+admin.add_view(TeamAnswerAdmin)
+admin.add_view(FileAdmin)

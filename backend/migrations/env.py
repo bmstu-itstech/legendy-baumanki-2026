@@ -5,9 +5,20 @@ from sqlalchemy import engine_from_config, pool
 from src.auth.infra.db.orm import UserModel  # noqa: F401
 from src.core.config import settings
 from src.db.base import BaseModel
+from src.files.infra.db.orm import FileModel  # noqa: F401
 from src.profile.infra.db.orm import (
     ProfileModel,  # noqa: F401
     TeamModel,  # noqa: F401
+)
+from src.tasks.infra.db.orm import (
+    ModuleModel,  # noqa: F401
+    SectionModel,  # noqa: F401
+    StateModel,  # noqa: F401
+    TaskAnswerModel,  # noqa: F401
+    TaskMediaModel,  # noqa: F401
+    TaskModel,  # noqa: F401
+    TaskQuestionModel,  # noqa: F401
+    TeamAnswerModel,  # noqa: F401
 )
 
 config = context.config

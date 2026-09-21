@@ -71,6 +71,45 @@
   --radius-section: 80px;
 }
 
+/**
+ * Тонкий скролл для внутренних горизонтальных прокруток (вкладки рейтинга,
+ * таблица с залипающими колонками). scrollbar-width/scrollbar-color не
+ * наследуются от html на каждый скроллящийся блок отдельно (актуально для
+ * Firefox), поэтому задаём их явно, а не полагаемся на глобальные правила.
+ */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink) var(--color-mist);
+
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--color-mist);
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink);
+    border-radius: 8px;
+  }
+}
+
+/**
+ * Скролл есть (контент можно прокрутить колесом/тачем/клавиатурой), но сам
+ * скроллбар не рисуется — для панелей, где полоса прокрутки визуально
+ * лишняя (например «Правила» с фиксированной высотой).
+ */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility container-page {
   margin-inline: auto;
   width: 100%;
@@ -229,5 +268,70 @@ body {
     .hero-adaptive {
       zoom: 0.66;
     }
+  }
+}
+
+/*
+  Страница заданий: появление облачка с описанием задания (растёт от стрелки,
+  transform-origin задаётся инлайном) и подпрыгивающая метка «Начать» над
+  доступным заданием.
+*/
+@keyframes task-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes task-tag-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.task-pop {
+  animation: task-pop 160ms ease-out both;
+}
+
+.task-tag {
+  animation: task-tag-bob 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-pop,
+  .task-tag {
+    animation: none;
+  }
+}
+
+/*
+  Здание на карточке модуля: цветной слой заливается снизу вверх до доли
+  выполненных заданий (--building-top — сколько процентов сверху ещё не закрашено).
+*/
+@keyframes building-fill {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(var(--building-top, 100%) 0 0 0);
+  }
+}
+
+.building-fill {
+  animation: building-fill 1.2s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .building-fill {
+    animation: none;
+    clip-path: inset(var(--building-top, 100%) 0 0 0);
   }
 }

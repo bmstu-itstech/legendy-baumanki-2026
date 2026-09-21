@@ -39,6 +39,17 @@ const ERROR_MESSAGES: Record<string, string> = {
   already_exists: "Уже существует",
   bad_request: "Некорректный запрос",
   permission_denied: "Недостаточно прав",
+  team_is_not_completed: "В команде пока недостаточно участников",
+  module_not_found: "Модуль не найден",
+  task_not_found: "Задание не найдено",
+  rating_not_found: "Рейтинг не найден",
+  task_illegal_status_transition: "Это действие сейчас недоступно для задания",
+  answers_not_match_questions: "Число ответов не совпадает с числом вопросов",
+  section_not_found: "Секция не найдена",
+  content_integrity_error:
+    "Не получилось сохранить — проверьте ссылки (модуль/секция/требуемое задание) и что на удаляемое ничего не ссылается",
+  file_too_large: "Файл слишком большой",
+  file_not_found: "Файл не найден",
 };
 
 // Если error_code неизвестен (или бэкенд его не прислал — например,

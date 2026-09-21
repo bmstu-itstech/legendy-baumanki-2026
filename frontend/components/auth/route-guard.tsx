@@ -47,3 +47,20 @@ export function RequireGuest({ children }: { children: ReactNode }) {
   if (!hasHydrated || status === "authenticated") return <GuardFallback />;
   return <>{children}</>;
 }
+
+/** Админка — только для is_superuser (см. AuthenticatedUser.isSuperuser). */
+export function RequireSuperuser({ children }: { children: ReactNode }) {
+  const status = useAuthStore((state) => state.status);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const isSuperuser = useAuthStore((state) => state.user?.isSuperuser ?? false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (status !== "authenticated") router.replace("/login");
+    else if (!isSuperuser) router.replace("/profile");
+  }, [hasHydrated, status, isSuperuser, router]);
+
+  if (!hasHydrated || status !== "authenticated" || !isSuperuser) return <GuardFallback />;
+  return <>{children}</>;
+}

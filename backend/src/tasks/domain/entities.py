@@ -2,7 +2,10 @@ import datetime as dt
 from enum import StrEnum
 
 from src.core.domain.entities import CustomModel
-from src.tasks.domain.exceptions import TaskIllegalStatusTransition
+from src.tasks.domain.exceptions import (
+    AnswersDoesNotMatchQuestions,
+    TaskIllegalStatusTransition,
+)
 
 COMPLETED_TEAM_MIN_SIZE = 3  # TODO: 5
 
@@ -74,16 +77,31 @@ class Task(CustomModel):
         ]:
             raise TaskIllegalStatusTransition()
         if len(answers) != len(self.questions):
-            raise Answer
-        if self.manual_review or all(
-            q.answer(s) for q, s in zip(self.questions, answers)
-        ):
+            raise AnswersDoesNotMatchQuestions()
+
+        # Список (не генератор в all()) — иначе для manual_review ветки
+        # q.answer(s) никогда не вызовется из-за короткого замыкания `or`,
+        # и last_answer не сохранится вовсе.
+        correct = [q.answer(s) for q, s in zip(self.questions, answers)]
+
+        if self.manual_review:
+            self.status = TaskStatus.REVIEW
+        elif all(correct):
             self.status = TaskStatus.COMPLETED
             self.completed_at = dt.datetime.now(tz=dt.timezone.utc)
             self.score = self.max_score
         else:
             self.status = TaskStatus.FAILED
+            self.completed_at = dt.datetime.now(tz=dt.timezone.utc)
             self.score = 0
+
+    def resolve_review(self, approved: bool):
+        """Организатор проверил ручное задание и зачёл/отклонил ответ."""
+        if self.status != TaskStatus.REVIEW:
+            raise TaskIllegalStatusTransition()
+        self.status = TaskStatus.COMPLETED if approved else TaskStatus.FAILED
+        self.score = self.max_score if approved else 0
+        self.completed_at = dt.datetime.now(tz=dt.timezone.utc)
 
     def start(self):
         if self.status != TaskStatus.OPENED:

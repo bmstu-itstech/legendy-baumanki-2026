@@ -2,16 +2,36 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useAuthStore } from "@/lib/store/auth-store";
 
-import { LogoutIcon, ProfileUserIcon, RatingIcon, TasksIcon } from "@/components/ui/icons";
+import {
+  LogoutIcon,
+  PencilIcon,
+  ProfileUserIcon,
+  RatingIcon,
+  TasksIcon,
+} from "@/components/ui/icons";
 
 const PROFILE_NAV_ITEMS = [
-  { label: "Задания", href: "#", Icon: TasksIcon, disabled: true },
-  { label: "Рейтинг", href: "#", Icon: RatingIcon, disabled: true },
+  { label: "Задания", href: "/profile/tasks", Icon: TasksIcon, disabled: false },
+  { label: "Рейтинг", href: "/profile/rating", Icon: RatingIcon, disabled: false },
   { label: "Профиль", href: "/profile", Icon: ProfileUserIcon, disabled: false },
 ] as const;
+
+const ADMIN_NAV_ITEM = {
+  label: "Админка",
+  href: "/admin",
+  Icon: PencilIcon,
+  disabled: false,
+} as const;
+
+/** Пункт админки виден только организаторам (is_superuser). */
+function useNavItems() {
+  const isSuperuser = useAuthStore((state) => state.user?.isSuperuser ?? false);
+  return isSuperuser ? [...PROFILE_NAV_ITEMS, ADMIN_NAV_ITEM] : PROFILE_NAV_ITEMS;
+}
 
 function useLogout() {
   const logout = useAuthStore((state) => state.logout);
@@ -27,69 +47,87 @@ function useLogout() {
   };
 }
 
+function useActiveNavHref() {
+  const pathname = usePathname();
+
+  return (href: string) => (href === "/profile" ? pathname === "/profile" : pathname.startsWith(href));
+}
+
 export function ProfileSidebar() {
   const handleLogout = useLogout();
+  const isActive = useActiveNavHref();
+  const navItems = useNavItems();
 
   return (
-    <aside className="relative hidden w-[300px] shrink-0 flex-col overflow-hidden bg-ink px-4 pt-8 lg:flex xl:w-[337px] xl:px-[18px]">
-      <Link href="/" className="flex w-full items-center">
-        <span className="block w-full text-[2.375rem] font-bold uppercase leading-[0.95] text-white xl:text-[2.75rem]">
-          ЛЕГЕНДЫ<span className="block">БАУМАНКИ</span>
-        </span>
-      </Link>
+    // Внешний aside — обычный flex-элемент в потоке: он растягивается на всю
+    // высоту строки (flex-stretch), поэтому тёмный фон всегда покрывает весь
+    // левый столбец целиком, сколько бы контента ни было справа, и держит под
+    // собой место в раскладке. Меню и картинка живут во ВНУТРЕННЕЙ обёртке с
+    // position:fixed — в отличие от sticky, fixed вообще не пересчитывается
+    // при скролле (как ProfileBottomNav на мобильных), координаты жёстко
+    // привязаны к паддингам самого aside. overflow:hidden предков (если он
+    // появится) fixed-обёртку не обрежет — её containing block — вьюпорт.
+    <aside className="hidden w-[300px] shrink-0 bg-ink lg:block xl:w-[337px]">
+      <div className="flex h-svh w-[300px] flex-col px-4 pt-8 lg:fixed lg:top-8 lg:left-0 lg:h-[calc(100svh-2rem)] xl:top-9 xl:h-[calc(100svh-2.25rem)] xl:w-[337px] xl:px-[18px]">
+        <Link href="/" className="flex w-full items-center">
+          <span className="block w-full text-[2.375rem] font-bold uppercase leading-[0.95] text-white xl:text-[2.75rem]">
+            ЛЕГЕНДЫ<span className="block">БАУМАНКИ</span>
+          </span>
+        </Link>
 
-      <nav className="mt-10 flex flex-col gap-3">
-        {PROFILE_NAV_ITEMS.map(({ label, href, Icon, disabled }) => {
-          const active = label === "Профиль";
+        <nav className="mt-10 flex flex-col gap-3">
+          {navItems.map(({ label, href, Icon, disabled }) => {
+            const active = isActive(href);
 
-          if (disabled) {
+            if (disabled) {
+              return (
+                <span
+                  key={label}
+                  aria-disabled="true"
+                  className="flex cursor-not-allowed items-center gap-3 rounded-[14px] border border-transparent px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white/50"
+                >
+                  <Icon className="size-7 shrink-0" />
+                  {label}
+                </span>
+              );
+            }
+
             return (
-              <span
+              <Link
                 key={label}
-                aria-disabled="true"
-                className="flex cursor-not-allowed items-center gap-3 rounded-[14px] border border-transparent px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white/50"
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-[14px] border px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white transition-colors ${
+                  active
+                    ? "border-white bg-secondary"
+                    : "border-transparent hover:bg-white/5"
+                }`}
               >
                 <Icon className="size-7 shrink-0" />
                 {label}
-              </span>
+              </Link>
             );
-          }
+          })}
 
-          return (
-            <Link
-              key={label}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-[14px] border px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white transition-colors ${
-                active
-                  ? "border-white bg-secondary"
-                  : "border-transparent hover:bg-white/5"
-              }`}
-            >
-              <Icon className="size-7 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex cursor-pointer items-center gap-3 rounded-[14px] border border-transparent px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <LogoutIcon className="size-7 shrink-0" />
+            Выйти
+          </button>
+        </nav>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex cursor-pointer items-center gap-3 rounded-[14px] border border-transparent px-3.5 py-3 font-hand text-[1.375rem] uppercase text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <LogoutIcon className="size-7 shrink-0" />
-          Выйти
-        </button>
-      </nav>
-
-      <div className="relative mt-auto -ml-4 aspect-[258/331] w-[270px] xl:w-[300px]">
-        <Image
-          src="/assets/profile-sidebar-decor.svg"
-          alt=""
-          fill
-          sizes="300px"
-          className="object-contain object-bottom"
-        />
+        <div className="relative mt-auto -ml-4 aspect-[258/331] w-[270px] shrink-0 xl:w-[300px]">
+          <Image
+            src="/assets/profile-sidebar-decor.svg"
+            alt=""
+            fill
+            sizes="300px"
+            className="object-contain object-bottom"
+          />
+        </div>
       </div>
     </aside>
   );
@@ -97,11 +135,13 @@ export function ProfileSidebar() {
 
 export function ProfileBottomNav() {
   const handleLogout = useLogout();
+  const isActive = useActiveNavHref();
+  const navItems = useNavItems();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[84px] items-center justify-around bg-ink px-2 lg:hidden">
-      {PROFILE_NAV_ITEMS.map(({ label, href, Icon, disabled }) => {
-        const active = label === "Профиль";
+      {navItems.map(({ label, href, Icon, disabled }) => {
+        const active = isActive(href);
 
         if (disabled) {
           return (

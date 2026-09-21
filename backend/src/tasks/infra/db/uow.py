@@ -3,7 +3,7 @@ from typing import Self
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.engine import async_session_maker
 from src.tasks.domain.interfaces.task_uow import ITaskUnitOfWork
-from src.tasks.infra.db.repository import MockTaskRepository
+from src.tasks.infra.db.repository import PGTaskRepository
 
 
 class PGTaskUnitOfWork(ITaskUnitOfWork):
@@ -12,7 +12,7 @@ class PGTaskUnitOfWork(ITaskUnitOfWork):
 
     async def __aenter__(self) -> Self:
         self.session: AsyncSession = self.session_factory()
-        self.tasks = MockTaskRepository()
+        self.tasks = PGTaskRepository(self.session)
         return await super().__aenter__()
 
     async def __aexit__(self, *args):
