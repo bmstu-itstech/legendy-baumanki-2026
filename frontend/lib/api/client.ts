@@ -40,7 +40,11 @@ export async function apiFetch<T>(
   }
 
   const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
+  // FormData (загрузка файла) сама выставляет Content-Type с boundary —
+  // навязанный application/json ломает multipart-запрос на бэкенде.
+  if (!(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   const token = tokenStore.get();
   if (token && !skipAuth) headers.set("Authorization", `Bearer ${token}`);
 

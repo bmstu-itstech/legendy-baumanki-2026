@@ -95,6 +95,8 @@ function taskFromDto(
     questions: dto.questions.map((question) => ({
       text: question.text,
       pattern: question.regex,
+      questionType: question.question_type,
+      supportedExt: question.supported_ext,
     })),
     explanation: dto.explanation,
     points: dto.max_score,

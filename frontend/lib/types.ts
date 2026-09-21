@@ -140,6 +140,10 @@ export type TaskQuestion = {
    * Трактуется как полное совпадение — как атрибут `pattern` у input.
    */
   pattern: string | null;
+  /** "file" — вместо текстового поля показываем загрузку файла. */
+  questionType: "text" | "file";
+  /** Разрешённые расширения для questionType "file", без точки (["jpg", "png"]). */
+  supportedExt: string[];
 };
 
 export type Task = {

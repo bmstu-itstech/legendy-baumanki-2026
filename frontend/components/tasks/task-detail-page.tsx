@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 
 import { Modal } from "@/components/ui/modal";
+import { toErrorMessage } from "@/lib/api/errors";
+import { filesApi } from "@/lib/api/files";
 import { formatDuration } from "@/lib/format";
 import { useTasksStore } from "@/lib/store/tasks-store";
-import type { Task, TaskMedia } from "@/lib/types";
+import type { Task, TaskMedia, TaskQuestion } from "@/lib/types";
 
 import { formatOpenAt, isModuleOpen, useNow } from "./module-access";
 import { TaskStatusBadge } from "./task-status-badge";
@@ -26,10 +28,11 @@ function formatTaskNumber(id: number) {
 }
 
 /** Формат ответа проверяем регуляркой от бэка (полное совпадение, как у атрибута pattern). */
-function validateAnswer(value: string, pattern: string | null) {
+function validateAnswer(value: string, question: TaskQuestion) {
   const trimmed = value.trim();
-  if (!trimmed) return "Введите ответ";
+  if (!trimmed) return question.questionType === "file" ? "Загрузите файл" : "Введите ответ";
 
+  const { pattern } = question;
   if (pattern) {
     try {
       if (!new RegExp(`^(?:${pattern})$`).test(trimmed)) {
@@ -174,12 +177,36 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
   const [fieldErrors, setFieldErrors] = useState<(string | null)[]>(() =>
     task.questions.map(() => null),
   );
+  // Для вопросов с questionType "file": имя выбранного файла (для подписи)
+  // и флаг "идёт загрузка" — answers[index] заполняется только по её итогу.
+  const [fileNames, setFileNames] = useState<(string | null)[]>(() =>
+    task.questions.map(() => null),
+  );
+  const [uploading, setUploading] = useState<boolean[]>(() => task.questions.map(() => false));
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
 
   const { status } = task;
-  const busy = pending !== null;
+  const anyUploading = uploading.some(Boolean);
+  const busy = pending !== null || anyUploading;
+
+  async function handleFileChange(index: number, files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+
+    setFileNames((current) => current.map((item, i) => (i === index ? file.name : item)));
+    setFieldErrors((current) => current.map((item, i) => (i === index ? null : item)));
+    setUploading((current) => current.map((item, i) => (i === index ? true : item)));
+    try {
+      const link = await filesApi.upload(file);
+      setAnswers((current) => current.map((item, i) => (i === index ? link : item)));
+    } catch (err) {
+      setFieldErrors((current) => current.map((item, i) => (i === index ? toErrorMessage(err) : item)));
+    } finally {
+      setUploading((current) => current.map((item, i) => (i === index ? false : item)));
+    }
+  }
   const showAssignment =
     status === "started" || status === "review" || status === "completed" || status === "failed";
   const canSkip = status === "opened" || status === "started";
@@ -203,7 +230,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
     event.preventDefault();
 
     const errors = task.questions.map((question, index) =>
-      validateAnswer(answers[index] ?? "", question.pattern),
+      validateAnswer(answers[index] ?? "", question),
     );
     setFieldErrors(errors);
     if (errors.some((error) => error !== null)) return;
@@ -244,7 +271,12 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
             <TaskStatusBadge status={status} />
           </header>
 
-          <p className="mt-4 text-[1.0625rem] leading-7 text-ink/75">{task.description}</p>
+          {/* description и assignment — один и тот же текст с бэка (desc):
+              teaser до старта и он же после. Показываем только одну копию —
+              либо тизер здесь, либо тот же текст ниже в блоке «Задание». */}
+          {!showAssignment ? (
+            <p className="mt-4 text-[1.0625rem] leading-7 text-ink/75">{task.description}</p>
+          ) : null}
 
           {showAssignment ? (
             <section aria-labelledby={`${answerId}-assignment`} className="mt-8 border-t border-ink/10 pt-6">
@@ -269,29 +301,59 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
                         <label htmlFor={fieldId} className="text-[0.9375rem] font-bold text-ink">
                           {question.text}
                         </label>
-                        <input
-                          id={fieldId}
-                          type="text"
-                          autoComplete="off"
-                          value={answers[index] ?? ""}
-                          disabled={busy}
-                          aria-invalid={error ? true : undefined}
-                          aria-describedby={error ? `${fieldId}-error` : undefined}
-                          onChange={(event) => {
-                            const { value } = event.target;
-                            setAnswers((current) =>
-                              current.map((item, i) => (i === index ? value : item)),
-                            );
-                            if (error) {
-                              setFieldErrors((current) =>
-                                current.map((item, i) => (i === index ? null : item)),
+
+                        {question.questionType === "file" ? (
+                          <>
+                            <input
+                              id={fieldId}
+                              type="file"
+                              accept={
+                                question.supportedExt.length
+                                  ? question.supportedExt.map((ext) => `.${ext}`).join(",")
+                                  : undefined
+                              }
+                              disabled={busy}
+                              aria-invalid={error ? true : undefined}
+                              aria-describedby={error ? `${fieldId}-error` : undefined}
+                              onChange={(event) => handleFileChange(index, event.target.files)}
+                              className="max-w-[440px] text-[0.9375rem] text-ink/75 file:mr-4 file:h-11 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink file:px-5 file:font-hand file:text-[1rem] file:uppercase file:text-white disabled:opacity-60"
+                            />
+                            <p className="text-[0.8125rem] text-ink/55">
+                              {uploading[index]
+                                ? "Загружаем…"
+                                : answers[index]
+                                  ? `Загружено: ${fileNames[index] ?? "файл"}`
+                                  : question.supportedExt.length
+                                    ? `Форматы: ${question.supportedExt.join(", ")}`
+                                    : null}
+                            </p>
+                          </>
+                        ) : (
+                          <input
+                            id={fieldId}
+                            type="text"
+                            autoComplete="off"
+                            value={answers[index] ?? ""}
+                            disabled={busy}
+                            aria-invalid={error ? true : undefined}
+                            aria-describedby={error ? `${fieldId}-error` : undefined}
+                            onChange={(event) => {
+                              const { value } = event.target;
+                              setAnswers((current) =>
+                                current.map((item, i) => (i === index ? value : item)),
                               );
-                            }
-                          }}
-                          className={`h-12 w-full max-w-[440px] rounded-full bg-mist px-5 text-[1.0625rem] font-medium text-ink outline-none ring-2 transition-shadow placeholder:text-ink/40 focus-visible:ring-secondary disabled:opacity-60 ${
-                            error ? "ring-error" : "ring-transparent"
-                          }`}
-                        />
+                              if (error) {
+                                setFieldErrors((current) =>
+                                  current.map((item, i) => (i === index ? null : item)),
+                                );
+                              }
+                            }}
+                            className={`h-12 w-full max-w-[440px] rounded-full bg-mist px-5 text-[1.0625rem] font-medium text-ink outline-none ring-2 transition-shadow placeholder:text-ink/40 focus-visible:ring-secondary disabled:opacity-60 ${
+                              error ? "ring-error" : "ring-transparent"
+                            }`}
+                          />
+                        )}
+
                         {error ? (
                           <p id={`${fieldId}-error`} role="alert" className="text-[0.875rem] text-error">
                             {error}

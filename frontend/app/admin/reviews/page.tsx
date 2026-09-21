@@ -81,7 +81,21 @@ export default function AdminReviewsPage() {
                       <p className="text-[0.8125rem] font-bold uppercase text-ink/60">
                         {a.questionText}
                       </p>
-                      <p className="text-[0.9375rem] break-words text-ink">{a.text}</p>
+                      {/* Ответ на вопрос с файлом — ссылка на скачивание (см. filesApi.upload
+                          на фронте команды), а не голый id — делаем её кликабельной, иначе
+                          модератору нечем посмотреть присланный файл, кроме копипаста в адресную строку. */}
+                      {/^https?:\/\//.test(a.text) ? (
+                        <a
+                          href={a.text}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="break-words text-[0.9375rem] text-secondary underline underline-offset-2 hover:text-ink"
+                        >
+                          {a.text}
+                        </a>
+                      ) : (
+                        <p className="text-[0.9375rem] break-words text-ink">{a.text}</p>
+                      )}
                     </div>
                   ))}
                 </div>
