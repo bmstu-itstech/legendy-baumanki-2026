@@ -75,10 +75,17 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         self.allowed_paths = allowed_paths or ["/api/v1", "/docs", "/redoc"]
 
     async def dispatch(self, request: Request, call_next):
-        request_path = str(request.url)
+        # ТОЛЬКО путь, без query-string/хоста/схемы, и startswith вместо `in` —
+        # иначе `?x=/api/v1` в query-параметре любого URL (подстрока где
+        # угодно в str(request.url)) снимал защиту с /admin для анонима.
+        request_path = request.url.path
 
-        is_protected_path = any(path in request_path for path in self.secure_paths)
-        is_allowed_path = any(path in request_path for path in self.allowed_paths)
+        is_protected_path = any(
+            request_path.startswith(path) for path in self.secure_paths
+        )
+        is_allowed_path = any(
+            request_path.startswith(path) for path in self.allowed_paths
+        )
 
         if (
             is_protected_path
