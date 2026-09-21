@@ -25,7 +25,16 @@ export const useRatingStore = create<RatingState & RatingActions>((set) => ({
     set({ status: "loading", error: null });
     try {
       const ratings = await ratingApi.getRatings();
-      const boards = await Promise.all(ratings.map((rating) => ratingApi.getRating(rating.id)));
+      // allSettled, а не all: один недоступный рейтинг (например, только что
+      // удалённый модуль) не должен ронять всю страницу в ошибку — остальные
+      // борды при этом показываются нормально, а если не выжил ни один, ниже
+      // просто получаем пустой boards и rating-table отрисует "Рейтинг пока пуст.".
+      const results = await Promise.allSettled(
+        ratings.map((rating) => ratingApi.getRating(rating.id)),
+      );
+      const boards = results
+        .filter((result): result is PromiseFulfilledResult<RatingBoard> => result.status === "fulfilled")
+        .map((result) => result.value);
       set({ boards, status: "loaded" });
     } catch (err) {
       set({ status: "error", error: toErrorMessage(err) });

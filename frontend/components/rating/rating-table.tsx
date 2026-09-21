@@ -38,6 +38,15 @@ const TEAM_NAME_EXPANDED = "whitespace-normal break-words";
 const ROW_STRIPE = "bg-white even:bg-[#f6f6fa]";
 
 /**
+ * Рейтинг может содержать сотни команд — рендерить их все сразу в тяжёлую
+ * sticky-таблицу не вариант, поэтому показываем страницами по PAGE_SIZE.
+ */
+const PAGE_SIZE = 50;
+
+const SHOW_MORE_BUTTON =
+  "h-11 shrink-0 cursor-pointer rounded-[14px] border-2 border-secondary/25 px-5 font-hand text-[1.0625rem] uppercase text-ink transition-colors hover:bg-mist";
+
+/**
  * Рейтинги — вкладки слева направо над таблицей (не «браузерные»: те же плашки,
  * что и в меню профиля). Ряд скроллится по горизонтали, на мобильных — до края экрана.
  * Паттерн WAI-ARIA tabs: стрелки, Home/End, «ролящийся» tabindex.
@@ -122,85 +131,105 @@ function BoardTable({ board }: { board: RatingBoard }) {
   const [expandedTeamId, setExpandedTeamId] = useState<RatingBoard["rows"][number]["teamId"] | null>(
     null,
   );
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visibleRows = board.rows.slice(0, visibleCount);
+  const hasMore = visibleCount < board.rows.length;
 
   return (
-    <div className="scrollbar-thin mt-5 overflow-x-auto">
-      <table className="w-full min-w-max border-collapse text-left text-[0.9375rem] text-ink">
-        <caption className="sr-only">Рейтинг команд: {board.title}</caption>
+    <div className="mt-5">
+      <div className="scrollbar-thin overflow-x-auto">
+        <table className="w-full min-w-max border-collapse text-left text-[0.9375rem] text-ink">
+          <caption className="sr-only">Рейтинг команд: {board.title}</caption>
 
-        <thead>
-          <tr className="border-b-2 border-ink/15 bg-white text-[0.75rem] uppercase text-ink/55">
-            <th scope="col" className={`${PLACE_CELL} py-2 font-bold whitespace-nowrap`}>
-              <span className="sm:hidden">Место</span>
-              <span className="hidden sm:inline">№ места</span>
-            </th>
-            <th scope="col" className={`${TEAM_CELL} py-2 font-bold`}>
-              <span className="sm:hidden">Команда</span>
-              <span className="hidden sm:inline">Название команды</span>
-            </th>
-            {board.columns.map((column) => (
-              <th
-                key={column.taskId}
-                scope="col"
-                title={`${column.title} — до ${column.maxPoints} баллов`}
-                className="min-w-[82px] px-2 py-2 text-center font-bold whitespace-nowrap"
-              >
-                Задание {column.index}
+          <thead>
+            <tr className="border-b-2 border-ink/15 bg-white text-[0.75rem] uppercase text-ink/55">
+              <th scope="col" className={`${PLACE_CELL} py-2 font-bold whitespace-nowrap`}>
+                <span className="sm:hidden">Место</span>
+                <span className="hidden sm:inline">№ места</span>
               </th>
-            ))}
-            <th
-              scope="col"
-              className="min-w-[92px] border-l border-ink/10 px-2 py-2 text-center font-bold"
-            >
-              Сумма баллов
-            </th>
-            <th scope="col" className="min-w-[104px] px-2 py-2 text-right font-bold">
-              Сумма времени
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {board.rows.map((row) => (
-            <tr key={row.teamId} className={`border-b border-ink/10 last:border-b-0 ${ROW_STRIPE}`}>
-              <td className={`${PLACE_CELL} py-3 align-top text-[1.0625rem] font-bold`}>
-                {row.place}
-              </td>
-              <td className={`${TEAM_CELL} py-3 align-top`}>
-                <button
-                  type="button"
-                  title={row.teamName}
-                  aria-expanded={expandedTeamId === row.teamId}
-                  onClick={() =>
-                    setExpandedTeamId((current) => (current === row.teamId ? null : row.teamId))
-                  }
-                  className={`${TEAM_NAME_BUTTON} ${
-                    expandedTeamId === row.teamId ? TEAM_NAME_EXPANDED : TEAM_NAME_COLLAPSED
-                  }`}
+              <th scope="col" className={`${TEAM_CELL} py-2 font-bold`}>
+                <span className="sm:hidden">Команда</span>
+                <span className="hidden sm:inline">Название команды</span>
+              </th>
+              {board.columns.map((column) => (
+                <th
+                  key={column.taskId}
+                  scope="col"
+                  title={`${column.title} — до ${column.maxPoints} баллов`}
+                  className="min-w-[82px] px-2 py-2 text-center font-bold whitespace-nowrap"
                 >
-                  {row.teamName}
-                </button>
-              </td>
-
-              {row.tasks.map((score) => (
-                <td key={score.taskId} className="px-2 py-3 text-center align-top">
-                  <span className="block text-[1.0625rem] leading-5 font-bold">{score.points}</span>
-                  <span className="block text-[0.75rem] leading-4 text-ink/50">
-                    {score.timeSec == null ? "—" : formatDuration(score.timeSec)}
-                  </span>
-                </td>
+                  Задание {column.index}
+                </th>
               ))}
-
-              <td className="border-l border-ink/10 px-2 py-3 text-center align-top text-[1.0625rem] font-bold">
-                {row.totalPoints}
-              </td>
-              <td className="px-2 py-3 text-right align-top whitespace-nowrap text-ink/70">
-                {formatDuration(row.totalTimeSec)}
-              </td>
+              <th
+                scope="col"
+                className="min-w-[92px] border-l border-ink/10 px-2 py-2 text-center font-bold"
+              >
+                Сумма баллов
+              </th>
+              <th scope="col" className="min-w-[104px] px-2 py-2 text-right font-bold">
+                Сумма времени
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {visibleRows.map((row) => (
+              <tr key={row.teamId} className={`border-b border-ink/10 last:border-b-0 ${ROW_STRIPE}`}>
+                <td className={`${PLACE_CELL} py-3 align-top text-[1.0625rem] font-bold`}>
+                  {row.place}
+                </td>
+                <td className={`${TEAM_CELL} py-3 align-top`}>
+                  <button
+                    type="button"
+                    title={row.teamName}
+                    aria-expanded={expandedTeamId === row.teamId}
+                    onClick={() =>
+                      setExpandedTeamId((current) => (current === row.teamId ? null : row.teamId))
+                    }
+                    className={`${TEAM_NAME_BUTTON} ${
+                      expandedTeamId === row.teamId ? TEAM_NAME_EXPANDED : TEAM_NAME_COLLAPSED
+                    }`}
+                  >
+                    {row.teamName}
+                  </button>
+                </td>
+
+                {row.tasks.map((score) => (
+                  <td key={score.taskId} className="px-2 py-3 text-center align-top">
+                    <span className="block text-[1.0625rem] leading-5 font-bold">{score.points}</span>
+                    <span className="block text-[0.75rem] leading-4 text-ink/50">
+                      {score.timeSec == null ? "—" : formatDuration(score.timeSec)}
+                    </span>
+                  </td>
+                ))}
+
+                <td className="border-l border-ink/10 px-2 py-3 text-center align-top text-[1.0625rem] font-bold">
+                  {row.totalPoints}
+                </td>
+                <td className="px-2 py-3 text-right align-top whitespace-nowrap text-ink/70">
+                  {formatDuration(row.totalTimeSec)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {hasMore ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((count) => Math.min(count + PAGE_SIZE, board.rows.length))}
+            className={SHOW_MORE_BUTTON}
+          >
+            Показать ещё {Math.min(PAGE_SIZE, board.rows.length - visibleCount)}
+          </button>
+          <span className="text-[0.8125rem] text-ink/55">
+            Показано {visibleRows.length} из {board.rows.length}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -267,7 +296,7 @@ export function RatingTable() {
         {activeBoard.rows.length === 0 ? (
           <p className="mt-6 text-[1rem] text-ink/70">В этом рейтинге пока нет результатов.</p>
         ) : (
-          <BoardTable board={activeBoard} />
+          <BoardTable key={activeBoard.id} board={activeBoard} />
         )}
       </div>
     </div>
