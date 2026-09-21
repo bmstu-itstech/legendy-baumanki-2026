@@ -350,6 +350,12 @@ class PGTaskRepository(ITaskRepository):
             return TaskStatus.CLOSED
         if tm.require_task_id is not None:
             prereq = states.get(tm.require_task_id)
-            if prereq is None or prereq.status != TaskStatus.COMPLETED:
+            # REVIEW считаем достаточным для разблокировки следующего задания —
+            # команда уже сдала предыдущее и не должна простаивать, пока
+            # модератор его проверяет (иногда это не быстро). Если ручную
+            # проверку в итоге отклонят (FAILED), команда всё равно продолжит
+            # идти по цепочке — это осознанный компромисс, не откатываем назад.
+            allowed = (TaskStatus.COMPLETED, TaskStatus.REVIEW)
+            if prereq is None or prereq.status not in allowed:
                 return TaskStatus.CLOSED
         return TaskStatus.OPENED
