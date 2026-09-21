@@ -97,15 +97,22 @@ class TaskModel(BaseModel):
         overlaps="module,tasks",
     )
 
+    # cascade="all, delete-orphan" — без него SQLAlchemy при удалении задания
+    # (или question.py: session.delete на отдельный вопрос) пытается
+    # обнулить task_questions.task_id/task_media.task_id, а они часть
+    # первичного ключа и NOT NULL — падает AssertionError вместо каскадного
+    # удаления. Дочерние записи всегда часть самого задания, отдельно не живут.
     questions: Mapped[list["TaskQuestionModel"]] = relationship(
         back_populates="task",
         order_by="TaskQuestionModel.number",
         lazy="selectin",
+        cascade="all, delete-orphan",
     )
     media: Mapped[list["TaskMediaModel"]] = relationship(
         back_populates="task",
         order_by="TaskMediaModel.number",
         lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
 
@@ -128,6 +135,7 @@ class TaskQuestionModel(BaseModel):
     answers: Mapped[list["TaskAnswerModel"]] = relationship(
         back_populates="question",
         lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
 

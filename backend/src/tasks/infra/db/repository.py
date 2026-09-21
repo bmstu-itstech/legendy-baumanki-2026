@@ -355,7 +355,9 @@ class PGTaskRepository(ITaskRepository):
             # модератор его проверяет (иногда это не быстро). Если ручную
             # проверку в итоге отклонят (FAILED), команда всё равно продолжит
             # идти по цепочке — это осознанный компромисс, не откатываем назад.
-            allowed = (TaskStatus.COMPLETED, TaskStatus.REVIEW)
+            # SKIPPED — тоже разблокирует: иначе кнопка «Пропустить» никуда не
+            # ведёт, а команда навсегда застревает на пропущенном задании.
+            allowed = (TaskStatus.COMPLETED, TaskStatus.REVIEW, TaskStatus.SKIPPED)
             if prereq is None or prereq.status not in allowed:
                 return TaskStatus.CLOSED
         return TaskStatus.OPENED

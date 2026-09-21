@@ -40,7 +40,10 @@ export default function ProfileLayout({ children }: LayoutProps<"/profile">) {
           />
 
           <div className="container-page py-8 sm:py-10">
-            <div className="relative z-10 mx-auto max-w-[900px]">{children}</div>
+            {/* Ширину контента задаёт каждая страница сама (см. profile/tasks —
+                узкая колонка, рейтинг — во всю доступную ширину: таблице с
+                прилипающими колонками и командами тесно в 900px). */}
+            <div className="relative z-10">{children}</div>
           </div>
         </div>
 

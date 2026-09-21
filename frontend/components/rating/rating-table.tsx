@@ -9,7 +9,7 @@ import { useRatingStore } from "@/lib/store/rating-store";
 import type { RatingBoard } from "@/lib/types";
 
 const cardClass =
-  "flex w-full flex-col rounded-[18px] border-2 border-secondary bg-white px-6 py-7 sm:px-9";
+  "flex w-full flex-col rounded-[18px] border-2 border-secondary bg-white px-1 py-7 sm:px-9";
 
 /**
  * Первые две колонки «залипают» слева: на каждое задание приходится своя
@@ -90,7 +90,7 @@ function BoardTabs({
       role="tablist"
       aria-label="Рейтинги"
       onKeyDown={handleKeyDown}
-      className="scrollbar-thin -mx-6 flex gap-2 overflow-x-auto px-6 pt-1 pb-3 sm:-mx-9 sm:px-9 sm:pt-1 sm:pb-3"
+      className="scrollbar-thin -mx-1 flex gap-2 overflow-x-auto px-1 pt-1 pb-3 sm:-mx-9 sm:px-9 sm:pt-1 sm:pb-3"
     >
       {boards.map((board) => {
         const active = board.id === value;

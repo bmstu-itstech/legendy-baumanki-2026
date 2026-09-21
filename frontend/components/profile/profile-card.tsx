@@ -105,7 +105,7 @@ export function ProfileCard() {
       <button
         type="button"
         onClick={() => setEditOpen(true)}
-        className="mt-4 flex h-[52px] w-full max-w-[300px] cursor-pointer items-center justify-center gap-2.5 rounded-[14px] bg-ink font-hand text-[1.25rem] uppercase text-white transition-transform hover:scale-[1.01]"
+        className="mt-4 flex min-h-[52px] w-full max-w-[300px] cursor-pointer items-center justify-center gap-2.5 rounded-[14px] bg-ink px-5 py-2 font-hand text-[1.25rem] uppercase text-white transition-transform hover:scale-[1.01]"
       >
         <PencilIcon className="size-5 shrink-0" />
         Редактировать профиль
