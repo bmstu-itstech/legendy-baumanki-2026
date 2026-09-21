@@ -5,4 +5,4 @@ echo "Running migrations..."
 alembic upgrade head
 
 echo "Starting..."
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --forwarded-allow-ips='*' --proxy-headers
+exec uvicorn main:app --host 0.0.0.0 --port 8000 --forwarded-allow-ips='*' --proxy-headers --log-config logging.json
