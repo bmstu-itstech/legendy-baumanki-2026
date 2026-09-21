@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { NAV_ITEMS, REGISTRATION_URL } from "@/components/site-data";
 
-import { EventCountdown } from "./event-countdown";
+// import { EventCountdown } from "./event-countdown";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,7 +31,7 @@ export function SiteHeader() {
 
   return (
     <div className="sticky top-0 z-50">
-      <EventCountdown />
+      {/* <EventCountdown /> */}
 
       <header className="relative bg-ink text-white">
         <div className="mx-auto flex h-20 w-full max-w-[1440px] items-center px-4 xl:px-[18px]">
