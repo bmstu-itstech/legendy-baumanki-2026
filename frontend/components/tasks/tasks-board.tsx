@@ -26,6 +26,12 @@ const MAP_WAVE = [0, 0.6, 0.95, 0.6, 0, -0.6, -0.95, -0.6];
 const MAP_MAX_AMPLITUDE = 120;
 /** Изгиб — точка, где змейка ушла к краю почти до максимума: рядом с ней свободный «карман» для звезды. */
 const BEND_WAVE = 0.9;
+/**
+ * Вертикальный шаг между звёздами, которые делят один и тот же «карман»
+ * (побочных заданий больше, чем изгибов). Должен быть не меньше высоты самой
+ * звезды с запасом — иначе соседние звёзды по вертикали перекрывают друг друга.
+ */
+const STAR_LAP_STEP = STAR_OUTER + 8;
 
 /** Цвета тропы подобраны под светлый фон страницы. */
 const PATH_DONE = "#12cf9e";
@@ -207,7 +213,8 @@ function layoutModuleMap(groups: MapGroup[], sideTasks: Task[], width: number) {
 
   // Побочные задания — в «карманы» изгибов, равномерно по всей карте. Карман лежит
   // на пустой стороне змейки: зеркально относительно центра. Если побочек больше,
-  // чем изгибов, добираем по кругу со сдвигом вниз на пол-шага.
+  // чем изгибов, добираем по кругу со сдвигом вниз на STAR_LAP_STEP — иначе
+  // несколько звёзд в одном кармане садятся друг на друга.
   const pockets = bends.length > 0 ? bends : main;
   const stars: PlacedTask[] = pockets.length
     ? sideTasks.map((task, index) => {
@@ -235,7 +242,7 @@ function layoutModuleMap(groups: MapGroup[], sideTasks: Task[], width: number) {
         return {
           task,
           x: Math.min(Math.max(x, half), width - half),
-          y: bend.y + lap * (MAP_ROW / 2),
+          y: bend.y + lap * STAR_LAP_STEP,
         };
       })
     : [];
