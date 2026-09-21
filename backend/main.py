@@ -13,6 +13,7 @@ from src.auth.presentation.middlewares import (
 from src.core.config import settings
 from src.core.domain.exceptions.exceptions import AppException
 from src.db.engine import engine
+from src.files.presentation.admin import FileAdmin
 from src.files.presentation.api import files_api_router
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
 from src.profile.presentation.api import profiles_api_router, teams_api_router
@@ -96,3 +97,4 @@ admin.add_view(TaskAnswerAdmin)
 admin.add_view(TaskMediaAdmin)
 admin.add_view(StateAdmin)
 admin.add_view(TeamAnswerAdmin)
+admin.add_view(FileAdmin)
