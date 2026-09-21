@@ -25,11 +25,12 @@ function profileFromDto(dto: ProfileReadDto): MyProfile {
 export const profileApi = {
   // Вызывается один раз сразу после register+login — user_id берётся из
   // ответа register, team_code — из ссылки-приглашения (если по ней пришли).
+  // user_id в теле не передаём — бэкенд берёт его из токена (иначе можно
+  // было бы создать профиль на чужой user_id).
   create: (payload: CreateProfilePayload) =>
     apiFetch<unknown>("/profiles", {
       method: "POST",
       body: JSON.stringify({
-        user_id: payload.userId,
         full_name: payload.fullName,
         group: payload.group,
         telegram: payload.telegram,

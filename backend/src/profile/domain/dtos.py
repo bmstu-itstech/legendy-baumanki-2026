@@ -18,7 +18,8 @@ TEAM_CODE_REGEX = r"^[A-Z1-9]{6}$"
 
 
 class ProfileCreateDTO(CustomModel):
-    user_id: int
+    # user_id НЕ берём из тела запроса — иначе любой аноним мог бы создать
+    # профиль на чужой user_id (см. api_create_profile: id берётся из токена).
     full_name: str = Field(
         pattern=PROFILE_FULL_NAME_REGEX, min_length=2, max_length=128
     )

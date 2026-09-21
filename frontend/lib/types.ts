@@ -31,7 +31,6 @@ export type MyProfile = {
 };
 
 export type CreateProfilePayload = {
-  userId: number;
   fullName: string;
   group: string;
   telegram: string;
