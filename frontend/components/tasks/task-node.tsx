@@ -124,7 +124,15 @@ export function TaskNode({
   return (
     <span
       className={`relative inline-flex shrink-0 items-center justify-center ${className}`}
-      style={{ width: ring ? outer : size, height: ring ? outer : size }}
+      style={{
+        width: ring ? outer : size,
+        height: ring ? outer : size,
+        // Тень-«грань» монетки визуально утяжеляет её снизу на depth px —
+        // без компенсации монетка внутри кольца выглядит сдвинутой вниз.
+        // Сдвигаем её вверх ровно на depth, чтобы монетка вместе с гранью
+        // была отцентрована по кольцу, а не только сама монетка без тени.
+        paddingBottom: ring ? depth : undefined,
+      }}
     >
       {ring ? (
         <svg
