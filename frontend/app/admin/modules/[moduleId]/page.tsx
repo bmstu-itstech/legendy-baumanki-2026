@@ -70,7 +70,7 @@ function TaskList({
               {t.manualReview ? ", ручная проверка" : ""})
             </span>
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href={`/admin/modules/${moduleId}/tasks/${t.id}`} className={secondaryButtonClass}>
               Изменить
             </Link>
@@ -239,7 +239,7 @@ export default function AdminModuleDetailPage() {
               />
             </Field>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <PrimaryButton type="submit" disabled={savingModule}>
               {savingModule ? "Сохраняем…" : "Сохранить"}
             </PrimaryButton>
@@ -263,7 +263,7 @@ export default function AdminModuleDetailPage() {
                 <span className="font-bold text-ink">
                   {s.number}. {s.title}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <SecondaryButton onClick={() => handleRenameSection(s.number, s.title)}>
                     Переименовать
                   </SecondaryButton>
