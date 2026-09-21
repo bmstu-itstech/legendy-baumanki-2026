@@ -258,7 +258,12 @@ export function TaskEditorForm({
                 type="number"
                 value={requireTaskId}
                 onChange={(event) => setRequireTaskId(event.target.value)}
-                placeholder="необязательно"
+                disabled={sectionNumber === ""}
+                placeholder={
+                  sectionNumber === ""
+                    ? "у побочных заданий нет требований"
+                    : "пусто — сцепится с предыдущим основным"
+                }
               />
             </Field>
           </div>

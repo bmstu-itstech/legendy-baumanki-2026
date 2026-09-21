@@ -115,6 +115,16 @@ class PGAdminContentRepository(IAdminContentRepository):
             TaskModel.number, TaskModel.module_id, data.module_id
         )
 
+        # Побочные задания необязательны и ничего не требуют. Для основных же
+        # админ обычно и не думает про id предыдущего задания — если он его
+        # не указал явно, сами цепляем задание к предыдущему основному
+        # заданию модуля (по номеру, секции не важны — «Дистант» продолжает
+        # «Очные», а не начинается заново). Первое основное задание модуля
+        # так и остаётся без require_task_id.
+        require_task_id = data.require_task_id
+        if data.section_number is not None and require_task_id is None:
+            require_task_id = await self._previous_main_task_id(data.module_id)
+
         tm = TaskModel(
             module_id=data.module_id,
             number=number,
@@ -124,7 +134,7 @@ class PGAdminContentRepository(IAdminContentRepository):
             explanation=data.explanation,
             max_score=data.max_score,
             manual_review=data.manual_review,
-            require_task_id=data.require_task_id,
+            require_task_id=require_task_id,
         )
         self.session.add(tm)
         await self._flush_checked()
@@ -301,6 +311,20 @@ class PGAdminContentRepository(IAdminContentRepository):
         stmt = select(func.max(number_col)).where(scope_col == scope_value)
         max_number = (await self.session.execute(stmt)).scalar()
         return (max_number or 0) + 1
+
+    async def _previous_main_task_id(self, module_id: int) -> int | None:
+        """id последнего (по номеру) основного задания модуля — новое основное
+        задание неявно требует именно его, если админ не задал require_task_id сам."""
+        stmt = (
+            select(TaskModel.id)
+            .where(
+                TaskModel.module_id == module_id,
+                TaskModel.section_number.is_not(None),
+            )
+            .order_by(TaskModel.number.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def _get_module_or_404(self, module_id: int) -> ModuleModel:
         stmt = select(ModuleModel).where(ModuleModel.id == module_id)
