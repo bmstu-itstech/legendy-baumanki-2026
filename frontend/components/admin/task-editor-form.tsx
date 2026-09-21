@@ -408,7 +408,7 @@ export function TaskEditorForm({
 
         <div className="mt-3 flex flex-col gap-3">
           {media.map((m, index) => (
-            <div key={index} className="flex flex-wrap items-end gap-3">
+            <div key={index} className="flex flex-wrap items-start gap-3">
               <div className="w-40">
                 <Field label="Тип">
                   <select
@@ -453,13 +453,17 @@ export function TaskEditorForm({
                   </p>
                 </Field>
               </div>
-              <button
-                type="button"
-                onClick={() => setMedia((current) => current.filter((_, i) => i !== index))}
-                className="h-11 text-[0.8125rem] font-bold uppercase text-error hover:underline"
-              >
-                Убрать
-              </button>
+              {/* Field с невидимым лейблом — чтобы кнопка встала вровень со строкой
+                  инпутов, а не с подписями "Тип"/"Файл" над ними. */}
+              <Field label=" ">
+                <button
+                  type="button"
+                  onClick={() => setMedia((current) => current.filter((_, i) => i !== index))}
+                  className="flex h-11 items-center text-[0.8125rem] font-bold uppercase text-error hover:underline"
+                >
+                  Убрать
+                </button>
+              </Field>
             </div>
           ))}
         </div>
