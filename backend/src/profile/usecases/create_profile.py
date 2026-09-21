@@ -5,13 +5,15 @@ from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 
 
 async def create_profile(
+    user_id: int,
     profile_dto: ProfileCreateDTO,
     uow: IProfileUnitOfWork,
     email_provider: IEmailProvider,
 ) -> ProfileReadDTO:
     team_code = profile_dto.team_code
     profile_data = ProfileCreate(
-        **profile_dto.model_dump(mode="json"),
+        user_id=user_id,
+        **profile_dto.model_dump(mode="json", exclude={"team_code"}),
     )
     async with uow:
         profile = await uow.profiles.create(profile_data)

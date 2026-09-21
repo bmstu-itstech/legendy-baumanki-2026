@@ -31,12 +31,15 @@ teams_api_router = APIRouter()
 
 
 @profiles_api_router.post("")
+@access_control()
 async def api_create_profile(
     profile: ProfileCreateDTO,
     uow: ProfileUoWDep,
     email_provider: EmailProviderDep,
+    auth: TokenAuthDep,
 ) -> ProfileReadDTO:
-    return await create_profile(profile, uow, email_provider)
+    uid = auth.request.state.user.id
+    return await create_profile(uid, profile, uow, email_provider)
 
 
 @profiles_api_router.get("/me", response_model=ProfileReadDTO)

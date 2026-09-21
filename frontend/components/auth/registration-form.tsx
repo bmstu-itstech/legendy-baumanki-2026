@@ -61,14 +61,13 @@ export function RegistrationForm() {
     try {
       // register сразу авторизует (access-токен в заголовке + refresh-cookie
       // на этот же запрос) — отдельный /auth/login не нужен.
-      const { id: userId } = await register({
+      await register({
         email,
         password,
         utmSource,
         utmCampaign,
       });
       await createProfile({
-        userId,
         fullName,
         group: studyGroup,
         telegram,
