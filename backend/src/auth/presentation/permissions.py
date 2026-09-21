@@ -47,3 +47,15 @@ class access_control:
             raise AuthRequired()
 
         return True
+
+
+async def require_superuser(request: Request) -> None:
+    """
+    Depends()-зависимость для целого роутера (APIRouter(dependencies=[...])) —
+    в отличие от @access_control(superuser=True) на каждом хендлере, её
+    невозможно забыть навесить на новый эндпоинт: она проверяется для любого
+    маршрута, зарегистрированного на этом роутере, до вызова самого хендлера.
+    """
+    user = getattr(request.state, "user", None) or AnonymousUser()
+    if not user.is_superuser:
+        raise PermissionDenied()
