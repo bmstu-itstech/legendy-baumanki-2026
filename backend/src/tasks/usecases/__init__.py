@@ -4,6 +4,7 @@ from .get_modules import get_modules
 from .get_rating import get_rating
 from .get_ratings import get_ratings
 from .get_task import get_task
+from .resolve_review import resolve_review
 from .skip_task import skip_task
 from .start_task import start_task
 
@@ -14,6 +15,7 @@ __all__ = [
     "get_rating",
     "get_ratings",
     "get_task",
+    "resolve_review",
     "skip_task",
     "start_task",
 ]

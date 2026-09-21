@@ -48,10 +48,15 @@ class TaskDTO(CustomModel):
     id: int
     title: str
     desc: str
-    explanation: str
+    # Раскрываем только после выполнения — иначе спойлерим решение всем, кто
+    # просто откроет сетевые запросы в браузере.
+    explanation: str | None
+    max_score: int
     score: int | None
     manual_review: bool
     status: TaskStatus
+    started_at: dt.datetime | None
+    completed_at: dt.datetime | None
     questions: list[QuestionDTO]
     media: list[Media]
 
@@ -61,10 +66,13 @@ class TaskDTO(CustomModel):
             id=t.id,
             title=t.title,
             desc=t.desc,
-            explanation=t.explanation,
+            explanation=t.explanation if t.status == TaskStatus.COMPLETED else None,
+            max_score=t.max_score,
             score=t.score,
             manual_review=t.manual_review,
             status=t.status,
+            started_at=t.started_at,
+            completed_at=t.completed_at,
             questions=[QuestionDTO.from_domain(q) for q in t.questions],
             media=t.media,
         )
@@ -132,10 +140,20 @@ class RatingsListDTO(CustomModel):
     ratings: list[RatingDTO]
 
 
+class RatingColumnDTO(CustomModel):
+    """Колонка «Задание N» — общая шапка для всех строк рейтинга."""
+
+    task_id: int
+    index: int
+    title: str
+    max_score: int
+
+
 class RatingCell(CustomModel):
     task_id: int
     score: int
-    time: dt.timedelta
+    # В секундах — так проще консьюмерам, чем парсить ISO 8601 duration.
+    time: int
 
 
 class RatingRow(CustomModel):
@@ -144,10 +162,11 @@ class RatingRow(CustomModel):
     team_name: str
     cells: list[RatingCell]
     total_score: int | None
-    total_time: dt.timedelta | None
+    total_time: int | None
 
 
 class RatingDetailDTO(RatingDTO):
+    columns: list[RatingColumnDTO]
     rows: list[RatingRow]
 
 

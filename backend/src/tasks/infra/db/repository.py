@@ -3,7 +3,13 @@ import datetime as dt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.profile.infra.db.orm import TeamModel
-from src.tasks.domain.dtos import RatingCell, RatingDetailDTO, RatingDTO, RatingRow
+from src.tasks.domain.dtos import (
+    RatingCell,
+    RatingColumnDTO,
+    RatingDetailDTO,
+    RatingDTO,
+    RatingRow,
+)
 from src.tasks.domain.entities import (
     Media,
     Module,
@@ -157,9 +163,13 @@ class PGTaskRepository(ITaskRepository):
             module_id = module.id
 
         tasks = (await self.session.execute(stmt)).scalars().all()
+        columns = [
+            RatingColumnDTO(task_id=t.id, index=i, title=t.title, max_score=t.max_score)
+            for i, t in enumerate(tasks, start=1)
+        ]
         if not tasks:
             return RatingDetailDTO(
-                id=rating_id, module_id=module_id, title=title, rows=[]
+                id=rating_id, module_id=module_id, title=title, columns=[], rows=[]
             )
 
         task_ids = [t.id for t in tasks]
@@ -172,7 +182,7 @@ class PGTaskRepository(ITaskRepository):
 
         if not by_team:
             return RatingDetailDTO(
-                id=rating_id, module_id=module_id, title=title, rows=[]
+                id=rating_id, module_id=module_id, title=title, columns=columns, rows=[]
             )
 
         teams_stmt = select(TeamModel).where(TeamModel.id.in_(by_team.keys()))
@@ -188,7 +198,7 @@ class PGTaskRepository(ITaskRepository):
             row.position = position
 
         return RatingDetailDTO(
-            id=rating_id, module_id=module_id, title=title, rows=rows
+            id=rating_id, module_id=module_id, title=title, columns=columns, rows=rows
         )
 
     @staticmethod
@@ -200,14 +210,14 @@ class PGTaskRepository(ITaskRepository):
     ) -> RatingRow:
         cells = []
         total_score = 0
-        total_time = dt.timedelta()
+        total_time = 0
         for t in tasks:
             s = team_states.get(t.id)
             score = s.score or 0 if s else 0
             time = (
-                s.completed_at - s.started_at
+                int((s.completed_at - s.started_at).total_seconds())
                 if s and s.completed_at and s.started_at
-                else dt.timedelta()
+                else 0
             )
             cells.append(RatingCell(task_id=t.id, score=score, time=time))
             total_score += score

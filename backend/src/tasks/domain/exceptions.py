@@ -32,6 +32,22 @@ class RatingNotFound(NotFound):
     error_code = "rating_not_found"
 
 
+class SectionNotFound(NotFound):
+    detail = "Section not found."
+    error_code = "section_not_found"
+
+
+class ContentIntegrityError(BadRequest):
+    """
+    Нарушение ссылочной целостности контента: несуществующий module_id /
+    section_number / require_task_id, или попытка удалить то, на что уже
+    есть ссылки (секция с заданиями, задание с ответами команд и т.п.).
+    """
+
+    detail = "Content integrity error."
+    error_code = "content_integrity_error"
+
+
 class TaskIllegalStatusTransition(AppException):
     detail = "Task status transition is illegal."
     error_code = "task_illegal_status_transition"
