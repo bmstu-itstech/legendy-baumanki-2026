@@ -336,7 +336,8 @@ export function TaskEditorForm({
               </div>
 
               <Field label="Текст вопроса">
-                <TextInput
+                <TextArea
+                  rows={2}
                   value={q.text}
                   onChange={(event) => updateQuestion(index, { text: event.target.value })}
                 />

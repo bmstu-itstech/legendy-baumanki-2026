@@ -311,7 +311,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
               teaser до старта и он же после. Показываем только одну копию —
               либо тизер здесь, либо тот же текст ниже в блоке «Задание». */}
           {!showAssignment ? (
-            <p className="mt-4 text-[1.0625rem] leading-7 text-ink/75">{task.description}</p>
+            <p className="mt-4 whitespace-pre-line text-[1.0625rem] leading-7 text-ink/75">{task.description}</p>
           ) : null}
 
           {showAssignment ? (
@@ -322,7 +322,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
               >
                 Задание
               </h2>
-              <p className="mt-3 text-[1.0625rem] leading-7 text-ink/75">{task.assignment}</p>
+              <p className="mt-3 whitespace-pre-line text-[1.0625rem] leading-7 text-ink/75">{task.assignment}</p>
 
               <MediaGrid media={task.media} />
 
@@ -337,7 +337,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
 
                     return (
                       <div key={fieldId} className="flex flex-col gap-2">
-                        <label htmlFor={fieldId} className="text-[0.9375rem] font-bold text-ink">
+                        <label htmlFor={fieldId} className="whitespace-pre-line text-[0.9375rem] font-bold text-ink">
                           {question.text}
                         </label>
 
@@ -476,7 +476,7 @@ function TaskView({ task, moduleName }: { task: Task; moduleName: string }) {
                   >
                     Пояснение
                   </h2>
-                  <p className="mt-2 text-[1.0625rem] leading-7 text-ink/75">{task.explanation}</p>
+                  <p className="mt-2 whitespace-pre-line text-[1.0625rem] leading-7 text-ink/75">{task.explanation}</p>
                 </section>
               ) : null}
             </div>

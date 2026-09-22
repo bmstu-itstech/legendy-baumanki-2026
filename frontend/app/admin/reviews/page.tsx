@@ -78,7 +78,7 @@ export default function AdminReviewsPage() {
                 <div className="mt-3 flex flex-col gap-2 border-t border-ink/10 pt-3">
                   {item.answers.map((a) => (
                     <div key={a.questionNumber}>
-                      <p className="text-[0.8125rem] font-bold uppercase text-ink/60">
+                      <p className="whitespace-pre-line text-[0.8125rem] font-bold uppercase text-ink/60">
                         {a.questionText}
                       </p>
                       {/* Ответ на вопрос с файлом — ссылка на скачивание (см. filesApi.upload
