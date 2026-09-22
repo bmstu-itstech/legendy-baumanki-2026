@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ArrowUpRight, DashedSwoosh, Star } from "@/components/ui/decor";
-import { REGISTRATION_URL } from "@/components/site-data";
+import { TASKS_URL } from "@/components/site-data";
 
 export function Hero() {
   return (
@@ -57,10 +57,10 @@ export function Hero() {
           </p>
 
           <Link
-            href={REGISTRATION_URL}
+            href={TASKS_URL}
             className="group mt-10 inline-flex h-[60px] w-fit items-center gap-3 rounded-pill bg-white px-6 text-[1.125rem] font-bold text-ink transition-transform hover:scale-[1.02] sm:h-[72px] sm:gap-5 sm:px-9 sm:text-h3 md:h-[92px] md:px-10 md:text-[2rem] lg:mt-14 lg:h-[125px] lg:gap-8 lg:px-12 lg:text-[2.75rem]"
           >
-            Зарегистрироваться
+            Перейти к заданиям
             <ArrowUpRight className="size-6 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1 sm:size-8 md:size-10 lg:size-14" />
           </Link>
         </div>
