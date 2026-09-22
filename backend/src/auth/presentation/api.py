@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from src.auth.config import auth_config
 from src.auth.domain.dtos import Credentials, UserCreatedDTO, UserCreateDTO
 from src.auth.domain.entities import AuthenticatedUser
 from src.auth.presentation.dependencies import (
@@ -11,7 +12,7 @@ from src.auth.presentation.rate_limit import (
     enforce_register_rate_limit,
 )
 from src.auth.usecases import authenticate, register_user
-from src.core.domain.exceptions.exceptions import NotAuthenticated
+from src.core.domain.exceptions.exceptions import NotAuthenticated, PermissionDenied
 
 auth_api_router = APIRouter()
 
@@ -23,6 +24,8 @@ async def register(
     uow: UserUoWDep,
     auth: TokenAuthDep,
 ):
+    if not auth_config.REGISTRATION_ENABLED:
+        raise PermissionDenied(detail="Registration is closed")
     enforce_register_rate_limit(auth.request)
     return await register_user(user_data, pwd_hasher, uow, auth)
 

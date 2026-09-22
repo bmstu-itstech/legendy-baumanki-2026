@@ -15,6 +15,10 @@ class AuthConfig(BaseSettings):
     JWT_ACCESS_HEADER_NAME: str = "Authorization"
     JWT_HEADER_TYPE: str = "Bearer"
 
+    # Регистрация закрыта: /auth/register отвечает 403. Вернуть можно через
+    # env REGISTRATION_ENABLED=true без правки кода.
+    REGISTRATION_ENABLED: bool = False
+
     # Экспериментальная фича, по умолчанию выключена — см. RateLimitDep.
     # Лимитер in-memory (как и InMemoryTokenStorage): переживает один процесс,
     # но не шарится между несколькими воркерами/репликами backend.
