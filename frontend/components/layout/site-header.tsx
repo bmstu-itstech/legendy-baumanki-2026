@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { NAV_ITEMS, REGISTRATION_URL } from "@/components/site-data";
+import { LOGIN_URL, NAV_ITEMS } from "@/components/site-data";
+import { ArrowUpRight } from "@/components/ui/decor";
 
 // import { EventCountdown } from "./event-countdown";
 
@@ -67,10 +68,11 @@ export function SiteHeader() {
           </nav>
 
           <Link
-            href={REGISTRATION_URL}
-            className="ml-8 hidden h-11 items-center justify-center rounded-chip border-2 border-white px-4 text-caption transition-colors hover:bg-white hover:text-ink xl:inline-flex xl:w-[168px]"
+            href={LOGIN_URL}
+            className="group ml-10 hidden h-11 items-center gap-2 rounded-chip bg-white pr-4 pl-5 text-body font-bold text-ink transition-colors hover:bg-accent xl:inline-flex"
           >
-            Зарегистрироваться
+            Войти
+            <ArrowUpRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
 
           <button
@@ -119,11 +121,12 @@ export function SiteHeader() {
               ))}
             </nav>
             <Link
-              href={REGISTRATION_URL}
+              href={LOGIN_URL}
               onClick={() => setMenuOpen(false)}
-              className="mt-6 flex h-12 items-center justify-center rounded-chip border-2 border-white text-title"
+              className="mt-6 flex h-12 items-center justify-center gap-2 rounded-chip bg-white text-title font-bold text-ink"
             >
-              Зарегистрироваться
+              Войти
+              <ArrowUpRight className="size-6 shrink-0" />
             </Link>
           </div>
         )}

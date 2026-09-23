@@ -1,5 +1,9 @@
 export const REGISTRATION_URL = "/registration";
 
+export const LOGIN_URL = "/login";
+
+export const TASKS_URL = "/profile/tasks";
+
 export const PHOTO_ALBUM_URL = "https://vk.ru/album-26724538_309374167";
 
 export const NAV_ITEMS = [

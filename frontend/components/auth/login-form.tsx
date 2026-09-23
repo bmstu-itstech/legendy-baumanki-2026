@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -104,13 +103,6 @@ export function LoginForm() {
         {submitting ? "Входим…" : "Войти"}
         <ArrowSubmitIcon className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </button>
-
-      <p className="mt-3 text-[1rem] text-ink sm:text-[1.125rem]">
-        Нет аккаунта?{" "}
-        <Link href="/registration" className="text-ink underline underline-offset-2">
-          Зарегистрироваться
-        </Link>
-      </p>
     </form>
   );
 }
