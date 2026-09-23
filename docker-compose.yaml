@@ -33,7 +33,4 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
 
 volumes:
-  # Загрузки пользователей и медиа заданий. Переживает пересборку и пересоздание
-  # контейнера и `docker system prune`. Удалится только вместе с
-  # `docker compose down -v` или `docker volume rm`.
   backend_storage:
