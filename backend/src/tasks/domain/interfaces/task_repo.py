@@ -14,6 +14,15 @@ class ITaskRepository(abc.ABC):
         """Возвращает модуль со всеми его заданиями"""
 
     @abc.abstractmethod
+    async def lock_task_state(self, team_id: int, task_id: int) -> None:
+        """Блокирует состояние задания команды до конца транзакции.
+
+        Вызывать до get_task_by_id в юзкейсах, которые меняют состояние:
+        иначе параллельные start/answer/skip читают устаревший статус и
+        перезаписывают друг друга (например, completed откатывается в started).
+        """
+
+    @abc.abstractmethod
     async def get_task_by_id(self, team_id: int, task_id: int) -> Task:
         """Возвращает задание по его ID"""
 

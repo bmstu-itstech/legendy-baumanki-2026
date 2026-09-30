@@ -19,6 +19,7 @@ async def skip_task(
     if not team.completed:
         raise TeamIsNotCompleted()
     async with uow:
+        await uow.tasks.lock_task_state(team.id, task_id)
         task = await uow.tasks.get_task_by_id(team.id, task_id)
         task.skip()
         task = await uow.tasks.update_task(

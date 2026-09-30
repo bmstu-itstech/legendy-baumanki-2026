@@ -11,6 +11,7 @@ async def resolve_review(
     """actor_id — суперюзер, принявший решение; нужен только для аудит-лога
     (@log_usecase), в саму бизнес-логику не участвует."""
     async with uow:
+        await uow.tasks.lock_task_state(team_id, task_id)
         task = await uow.tasks.get_task_by_id(team_id, task_id)
         task.resolve_review(approved)
         task = await uow.tasks.update_task(
