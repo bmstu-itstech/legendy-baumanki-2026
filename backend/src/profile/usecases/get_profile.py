@@ -1,8 +1,10 @@
+from src.core.logging import log_usecase
 from src.profile.domain.dtos import ProfileReadDTO
 from src.profile.domain.interfaces.email_provider import IEmailProvider
 from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 
 
+@log_usecase
 async def get_profile(
     user_id: int,
     uow: IProfileUnitOfWork,

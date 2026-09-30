@@ -1,9 +1,11 @@
+from src.core.logging import log_usecase
 from src.tasks.domain.dtos import ModuleDTO, ModulesListDTO
 from src.tasks.domain.exceptions import TeamIsNotCompleted, UserIsNotInTeam
 from src.tasks.domain.interfaces.task_uow import ITaskUnitOfWork
 from src.tasks.domain.interfaces.team_provider import ITeamProvider
 
 
+@log_usecase
 async def get_modules(
     user_id: int,
     uow: ITaskUnitOfWork,

@@ -3,6 +3,8 @@ import logging
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqladmin import Admin
+from starlette.middleware.cors import CORSMiddleware
+
 from src.auth.presentation.admin import UserAdmin
 from src.auth.presentation.api import auth_api_router
 from src.auth.presentation.middlewares import (
@@ -12,6 +14,7 @@ from src.auth.presentation.middlewares import (
 )
 from src.core.config import settings
 from src.core.domain.exceptions.exceptions import AppException
+from src.core.logging import configure_logging
 from src.db.engine import engine
 from src.files.presentation.admin import FileAdmin
 from src.files.presentation.api import files_api_router
@@ -33,8 +36,8 @@ from src.tasks.presentation.api import (
     ratings_api_router,
     tasks_api_router,
 )
-from starlette.middleware.cors import CORSMiddleware
 
+configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(

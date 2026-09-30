@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends
+from starlette import status
+
+from src.auth.presentation.dependencies import TokenAuthDep
 from src.auth.presentation.permissions import require_superuser
 from src.tasks.domain.admin_dtos import (
     AdminModuleContentDTO,
@@ -16,7 +19,6 @@ from src.tasks.domain.dtos import TaskDTO
 from src.tasks.presentation.admin_dependencies import AdminContentUoWDep
 from src.tasks.presentation.dependencies import TaskUoWDep
 from src.tasks.usecases import resolve_review
-from starlette import status
 
 # dependencies=[...] — авторизация всего роутера в одном месте: любой новый
 # эндпоинт здесь автоматически требует суперюзера, даже если на конкретном
@@ -162,5 +164,7 @@ async def api_admin_resolve_review(
     task_id: int,
     data: AdminReviewResolveDTO,
     uow: TaskUoWDep,
+    auth: TokenAuthDep,
 ) -> TaskDTO:
-    return await resolve_review(team_id, task_id, data.approve, uow)
+    actor_id = auth.request.state.user.id
+    return await resolve_review(actor_id, team_id, task_id, data.approve, uow)

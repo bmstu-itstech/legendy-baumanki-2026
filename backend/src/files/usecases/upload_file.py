@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from src.core.domain.exceptions.exceptions import NotAuthenticated
+from src.core.logging import log_usecase
 from src.files.config import settings
 from src.files.domain.entities import FileCreate
 from src.files.domain.exceptions import FileTooLarge
@@ -8,6 +9,7 @@ from src.files.domain.interfaces.file_storage import IFileStorage
 from src.files.domain.interfaces.file_uow import IFileUnitOfWork
 
 
+@log_usecase
 async def upload_file(
     filename: str,
     content_type: str,
