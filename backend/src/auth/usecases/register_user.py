@@ -3,8 +3,10 @@ from src.auth.domain.entities import AuthenticatedUser, User, UserCreate
 from src.auth.domain.interfaces.token_auth import ITokenAuth
 from src.auth.domain.interfaces.user_uow import IUserUnitOfWork
 from src.core.domain.interfaces.password_hasher import IPasswordHasher
+from src.core.logging import log_usecase
 
 
+@log_usecase
 async def register_user(
     user_data: UserCreateDTO,
     pwd_hasher: IPasswordHasher,

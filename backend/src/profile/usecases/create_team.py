@@ -1,3 +1,4 @@
+from src.core.logging import log_usecase
 from src.profile.domain.dtos import TeamCreatedDTO, TeamCreateDTO
 from src.profile.domain.entities import ProfileUpdate, TeamCreate
 from src.profile.domain.exception import UserAlreadyInTeam
@@ -5,6 +6,7 @@ from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 from src.profile.domain.interfaces.team_code_provider import ITeamCodeProvider
 
 
+@log_usecase
 async def create_team(
     actor_id: int,
     team_dto: TeamCreateDTO,

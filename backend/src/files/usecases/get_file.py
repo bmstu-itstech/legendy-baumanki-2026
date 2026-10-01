@@ -1,9 +1,11 @@
+from starlette.responses import FileResponse
+
 from src.core.domain.exceptions.exceptions import NotAuthenticated, PermissionDenied
+from src.core.logging import log_usecase
 from src.files.domain.interfaces.file_storage import IFileStorage
 from src.files.domain.interfaces.file_uow import IFileUnitOfWork
 from src.files.domain.interfaces.task_media_checker import ITaskMediaChecker
 from src.files.domain.interfaces.team_provider import ITeamProvider
-from starlette.responses import FileResponse
 
 # Инлайн-рендер (без Content-Disposition) разрешён только для типов, которые
 # реально нужно показывать в <img>/<video>/<audio> (components/tasks/task-detail-page.tsx).
@@ -28,6 +30,7 @@ _INLINE_SAFE_CONTENT_TYPES = frozenset(
 )
 
 
+@log_usecase
 async def get_file(
     file_id: int,
     requested_by: int | None,

@@ -1,6 +1,6 @@
 import datetime as dt
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.profile.infra.db.orm import TeamModel
 from src.tasks.domain.dtos import (
@@ -93,6 +93,14 @@ class PGTaskRepository(ITaskRepository):
             max_score=max_score,
             sections=sections,
             auxiliary_tasks=auxiliary_tasks,
+        )
+
+    async def lock_task_state(self, team_id: int, task_id: int) -> None:
+        # Advisory-лок, а не SELECT ... FOR UPDATE: при первом start строки в
+        # states ещё нет, и FOR UPDATE нечего блокировать. Снимается сам на
+        # commit/rollback.
+        await self.session.execute(
+            select(func.pg_advisory_xact_lock(team_id, task_id))
         )
 
     async def get_task_by_id(self, team_id: int, task_id: int) -> Task:

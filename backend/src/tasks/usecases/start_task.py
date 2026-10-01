@@ -1,3 +1,4 @@
+from src.core.logging import log_usecase
 from src.tasks.domain.dtos import TaskDTO
 from src.tasks.domain.entities import TaskUpdate
 from src.tasks.domain.exceptions import TeamIsNotCompleted, UserIsNotInTeam
@@ -5,6 +6,7 @@ from src.tasks.domain.interfaces.task_uow import ITaskUnitOfWork
 from src.tasks.domain.interfaces.team_provider import ITeamProvider
 
 
+@log_usecase
 async def start_task(
     task_id: int,
     user_id: int,
@@ -17,6 +19,7 @@ async def start_task(
     if not team.completed:
         raise TeamIsNotCompleted()
     async with uow:
+        await uow.tasks.lock_task_state(team.id, task_id)
         task = await uow.tasks.get_task_by_id(team.id, task_id)
         task.start()
         task = await uow.tasks.update_task(
