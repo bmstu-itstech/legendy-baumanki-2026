@@ -156,7 +156,6 @@ function BookingStatus({
 
   if (isTeamTooSmall(overview)) {
     const size = overview.teamSize ?? 0;
-    const missing = overview.minTeamSize - size;
     return (
       <div className="rounded-[14px] border-2 border-error/60 bg-error/10 px-5 py-4 text-ink">
         <p className="text-[1.0625rem] font-bold">
