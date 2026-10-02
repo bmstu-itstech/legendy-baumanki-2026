@@ -232,7 +232,135 @@ function reviewFromDto(dto: ReviewItemDto): AdminReviewItem {
   };
 }
 
+// --- Финал: команды по слотам ----------------------------------------------
+
+export type AdminFinalTeam = {
+  id: number;
+  name: string;
+  publicCode: string;
+  /** Сколько человек в команде сейчас. */
+  size: number;
+  captainName: string;
+  captainTelegram: string;
+};
+
+export type AdminFinalBookedTeam = AdminFinalTeam & {
+  bookedAt: string;
+};
+
+export type AdminFinalSlot = {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  booked: number;
+  teams: AdminFinalBookedTeam[];
+};
+
+export type AdminFinal = {
+  /** Порог для записи капитаном — команды меньше него подсвечиваем. */
+  minTeamSize: number;
+  slots: AdminFinalSlot[];
+  /** Команды без записи — кандидаты на ручное добавление в слот. */
+  unbookedTeams: AdminFinalTeam[];
+};
+
+type FinalTeamDto = {
+  id: number;
+  name: string;
+  public_code: string;
+  size: number;
+  captain_name: string;
+  captain_telegram: string;
+};
+
+type FinalDto = {
+  min_team_size: number;
+  slots: {
+    id: number;
+    starts_at: string;
+    ends_at: string;
+    capacity: number;
+    booked: number;
+    teams: (FinalTeamDto & { booked_at: string })[];
+  }[];
+  unbooked_teams: FinalTeamDto[];
+};
+
+function finalTeamFromDto(dto: FinalTeamDto): AdminFinalTeam {
+  return {
+    id: dto.id,
+    name: dto.name,
+    publicCode: dto.public_code,
+    size: dto.size,
+    captainName: dto.captain_name,
+    captainTelegram: dto.captain_telegram,
+  };
+}
+
+function finalFromDto(dto: FinalDto): AdminFinal {
+  return {
+    minTeamSize: dto.min_team_size,
+    slots: dto.slots.map((slot) => ({
+      id: slot.id,
+      startsAt: slot.starts_at,
+      endsAt: slot.ends_at,
+      capacity: slot.capacity,
+      booked: slot.booked,
+      teams: slot.teams.map((team) => ({ ...finalTeamFromDto(team), bookedAt: team.booked_at })),
+    })),
+    unbookedTeams: dto.unbooked_teams.map(finalTeamFromDto),
+  };
+}
+
+// --- Команда: состав с контактами (только для организаторов) ---------------
+
+export type AdminTeamMember = {
+  userId: number;
+  fullName: string;
+  group: string;
+  telegram: string;
+  email: string;
+};
+
+export type AdminTeamDetails = {
+  id: number;
+  publicCode: string;
+  name: string;
+  leaderId: number;
+  createdAt: string;
+  /** Капитан первым, остальные по имени. */
+  members: AdminTeamMember[];
+};
+
+type TeamDetailsDto = {
+  id: number;
+  public_code: string;
+  name: string;
+  leader_id: number;
+  created_at: string;
+  members: { user_id: number; full_name: string; group: string; telegram: string; email: string }[];
+};
+
+function teamDetailsFromDto(dto: TeamDetailsDto): AdminTeamDetails {
+  return {
+    id: dto.id,
+    publicCode: dto.public_code,
+    name: dto.name,
+    leaderId: dto.leader_id,
+    createdAt: dto.created_at,
+    members: dto.members.map((m) => ({
+      userId: m.user_id,
+      fullName: m.full_name,
+      group: m.group,
+      telegram: m.telegram,
+      email: m.email,
+    })),
+  };
+}
+
 const BASE = "/admin/content";
+const FINAL_BASE = "/admin/final";
 
 export const adminApi = {
   listModules: () =>
@@ -304,4 +432,22 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ approve }),
     }),
+
+  // Добавление и удаление возвращают свежую картину целиком — счётчики и
+  // список свободных команд меняются вместе.
+  getFinal: () => apiFetch<FinalDto>(FINAL_BASE).then(finalFromDto),
+
+  addFinalTeam: (slotId: number, teamId: number) =>
+    apiFetch<FinalDto>(`${FINAL_BASE}/slots/${slotId}/teams`, {
+      method: "POST",
+      body: JSON.stringify({ team_id: teamId }),
+    }).then(finalFromDto),
+
+  removeFinalTeam: (slotId: number, teamId: number) =>
+    apiFetch<FinalDto>(`${FINAL_BASE}/slots/${slotId}/teams/${teamId}`, {
+      method: "DELETE",
+    }).then(finalFromDto),
+
+  getTeam: (teamId: number) =>
+    apiFetch<TeamDetailsDto>(`/admin/teams/${teamId}`).then(teamDetailsFromDto),
 };

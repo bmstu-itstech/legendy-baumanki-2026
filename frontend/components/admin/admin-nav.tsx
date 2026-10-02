@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const ADMIN_NAV_ITEMS = [
   { label: "Модули и задания", href: "/admin" },
   { label: "Модерация", href: "/admin/reviews" },
+  { label: "Финал", href: "/admin/final" },
 ] as const;
 
 export function AdminNav() {

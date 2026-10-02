@@ -6,6 +6,10 @@ from src.auth.infra.db.orm import UserModel  # noqa: F401
 from src.core.config import settings
 from src.db.base import BaseModel
 from src.files.infra.db.orm import FileModel  # noqa: F401
+from src.final.infra.db.orm import (
+    FinalBookingModel,  # noqa: F401
+    FinalSlotModel,  # noqa: F401
+)
 from src.profile.infra.db.orm import (
     ProfileModel,  # noqa: F401
     TeamModel,  # noqa: F401

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 import {
+  FlagIcon,
   LogoutIcon,
   PencilIcon,
   ProfileUserIcon,
@@ -17,6 +18,7 @@ import {
 const PROFILE_NAV_ITEMS = [
   { label: "Задания", href: "/profile/tasks", Icon: TasksIcon, disabled: false },
   { label: "Рейтинг", href: "/profile/rating", Icon: RatingIcon, disabled: false },
+  { label: "Финал", href: "/profile/final", Icon: FlagIcon, disabled: false },
   { label: "Профиль", href: "/profile", Icon: ProfileUserIcon, disabled: false },
 ] as const;
 

@@ -24,6 +24,10 @@ class ITeamRepository(abc.ABC):
         """
 
     @abc.abstractmethod
+    async def get_team_with_members(self, team_id: int) -> TeamWithMembers:
+        """Возвращает команду по ID вместе с профилями участников"""
+
+    @abc.abstractmethod
     async def update_team(self, team_data: TeamUpdate) -> Team:
         """Обновляет команду в репозитории"""
 

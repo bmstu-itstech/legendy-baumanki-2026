@@ -121,6 +121,17 @@ class PGTeamRepository(ITeamRepository):
             return None
         return self._to_domain_with_members(obj)
 
+    async def get_team_with_members(self, team_id: int) -> TeamWithMembers:
+        stmt = (
+            select(TeamModel)
+            .where(TeamModel.id == team_id)
+            .options(selectinload(TeamModel.members))
+        )
+        obj: TeamModel | None = (await self.session.execute(stmt)).scalar_one_or_none()
+        if not obj:
+            raise TeamNotFound(detail=f"Team with id {team_id} not found")
+        return self._to_domain_with_members(obj)
+
     async def update_team(self, team_data: TeamUpdate) -> Team:
         stmt = (
             select(TeamModel)

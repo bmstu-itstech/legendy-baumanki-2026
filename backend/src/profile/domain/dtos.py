@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Self
 
 from pydantic import Field
@@ -93,3 +94,22 @@ class TeamWithMembersDTO(CustomModel):
 
 class TeamUpdateDTO(CustomModel):
     name: str = Field(min_length=3, max_length=128)
+
+
+class AdminTeamMemberDTO(CustomModel):
+    """Участник глазами организатора — в отличие от TeamMemberDTO, с email."""
+
+    user_id: int
+    full_name: str
+    group: str
+    telegram: str
+    email: str
+
+
+class AdminTeamDTO(CustomModel):
+    id: int
+    public_code: str
+    name: str
+    leader_id: int
+    created_at: dt.datetime
+    members: list[AdminTeamMemberDTO]
