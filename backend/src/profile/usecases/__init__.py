@@ -1,3 +1,4 @@
+from .admin_get_team import admin_get_team
 from .create_profile import create_profile
 from .create_team import create_team
 from .get_profile import get_profile
@@ -8,6 +9,7 @@ from .update_profile import update_profile
 from .update_team import update_team
 
 __all__ = [
+    "admin_get_team",
     "create_profile",
     "create_team",
     "get_profile",

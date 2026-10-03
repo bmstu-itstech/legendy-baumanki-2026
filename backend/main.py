@@ -18,7 +18,11 @@ from src.core.logging import configure_logging
 from src.db.engine import engine
 from src.files.presentation.admin import FileAdmin
 from src.files.presentation.api import files_api_router
+from src.final.presentation.admin import FinalBookingAdmin, FinalSlotAdmin
+from src.final.presentation.admin_api import admin_final_api_router
+from src.final.presentation.api import final_api_router
 from src.profile.presentation.admin import ProfileAdmin, TeamAdmin
+from src.profile.presentation.admin_api import admin_teams_api_router
 from src.profile.presentation.api import profiles_api_router, teams_api_router
 from src.tasks.presentation.admin import (
     ModuleAdmin,
@@ -84,9 +88,12 @@ api_router.include_router(modules_api_router, prefix="/modules", tags=["modules"
 api_router.include_router(tasks_api_router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(ratings_api_router, prefix="/ratings", tags=["ratings"])
 api_router.include_router(files_api_router, prefix="/files", tags=["files"])
+api_router.include_router(final_api_router, prefix="/final", tags=["final"])
 api_router.include_router(
     admin_content_api_router, prefix="/admin/content", tags=["admin"]
 )
+api_router.include_router(admin_final_api_router, prefix="/admin/final", tags=["admin"])
+api_router.include_router(admin_teams_api_router, prefix="/admin/teams", tags=["admin"])
 
 admin = Admin(app, engine)
 admin.add_view(UserAdmin)
@@ -101,3 +108,5 @@ admin.add_view(TaskMediaAdmin)
 admin.add_view(StateAdmin)
 admin.add_view(TeamAnswerAdmin)
 admin.add_view(FileAdmin)
+admin.add_view(FinalSlotAdmin)
+admin.add_view(FinalBookingAdmin)

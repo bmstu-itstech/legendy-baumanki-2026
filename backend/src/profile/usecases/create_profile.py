@@ -1,6 +1,6 @@
 from src.core.logging import log_usecase
 from src.profile.domain.dtos import ProfileCreateDTO, ProfileReadDTO
-from src.profile.domain.entities import ProfileCreate, TeamUpdate
+from src.profile.domain.entities import ProfileCreate, ProfileUpdate, TeamUpdate
 from src.profile.domain.interfaces.email_provider import IEmailProvider
 from src.profile.domain.interfaces.profile_uow import IProfileUnitOfWork
 
@@ -25,6 +25,15 @@ async def create_profile(
             await uow.teams.update_team(
                 TeamUpdate(
                     **team.model_dump(mode="json"),
+                )
+            )
+            # Членство хранится в profiles.team_id — team.join() меняет только
+            # список в памяти, а TeamUpdate участников не сохраняет (как и в
+            # join_team, профиль обновляем явно).
+            profile = await uow.profiles.update(
+                ProfileUpdate(
+                    user_id=profile.user_id,
+                    team_id=team.id,
                 )
             )
         await uow.commit()
