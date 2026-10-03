@@ -161,13 +161,13 @@ def team_of(size: int) -> FakeTeamProvider:
 
 async def test_small_team_cannot_book(uow, repo):
     with pytest.raises(FinalTeamTooSmall) as exc:
-        await book_final_slot(CAPTAIN_ID, SLOT_ID, uow, team_of(2))
-    assert exc.value.extra == {"min_size": 3, "size": 2}
+        await book_final_slot(CAPTAIN_ID, SLOT_ID, uow, team_of(4))
+    assert exc.value.extra == {"min_size": 5, "size": 4}
     assert repo.bookings == {}
 
 
 async def test_team_of_min_size_can_book(uow, repo):
-    await book_final_slot(CAPTAIN_ID, SLOT_ID, uow, team_of(3))
+    await book_final_slot(CAPTAIN_ID, SLOT_ID, uow, team_of(5))
     assert repo.bookings == {TEAM_ID: SLOT_ID}
 
 
@@ -179,8 +179,8 @@ async def test_shrunk_team_can_still_cancel(uow, repo):
 
 
 async def test_overview_reports_team_size(uow):
-    overview = await get_final(MEMBER_ID, uow, team_of(2))
-    assert overview.team_size == 2
-    assert overview.min_team_size == 3
-    no_team = await get_final(999, uow, team_of(2))
+    overview = await get_final(MEMBER_ID, uow, team_of(4))
+    assert overview.team_size == 4
+    assert overview.min_team_size == 5
+    no_team = await get_final(999, uow, team_of(4))
     assert no_team.team_size is None

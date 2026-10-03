@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     )
     # Капитан может записать команду, только если в ней хотя бы столько
     # человек. Организатор из админки этот порог обходит.
-    FINAL_TEAM_MIN_SIZE: int = 3
+    FINAL_TEAM_MIN_SIZE: int = 5
 
 
 settings = Settings()

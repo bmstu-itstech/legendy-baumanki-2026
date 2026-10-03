@@ -59,7 +59,7 @@ async def test_overview_groups_teams_by_slot(uow, repo):
 
 async def test_overview_reports_min_team_size(uow):
     overview = await admin_get_final(uow)
-    assert overview.min_team_size == 3
+    assert overview.min_team_size == 5
 
 
 async def test_admin_adds_team_even_after_deadline(uow, repo, monkeypatch):
